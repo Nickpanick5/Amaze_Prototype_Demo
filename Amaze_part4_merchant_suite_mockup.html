@@ -1,0 +1,2799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amaze — Merchant Suite Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0F1B33;
+    --ink-soft:#4B5568;
+    --muted:#8A93A6;
+    --base:#F3F5F9;
+    --surface:#FFFFFF;
+    --line:#E4E8F0;
+    --brand:#3451FF;
+    --brand-soft:#EAEDFF;
+    --live:#00B894;
+    --live-soft:#E4F9F3;
+    --urgency:#FF5252;
+    --urgency-soft:#FFEAEA;
+    --gold:#B9860C;
+    --gold-soft:#FBF2DC;
+    --radius:16px;
+    --shadow-sm:0 1px 2px rgba(15,27,51,.05);
+    --shadow-md:0 14px 30px -18px rgba(15,27,51,.35);
+    --font-display:'Space Grotesk', system-ui, sans-serif;
+    --font-body:'Inter', system-ui, sans-serif;
+    --font-mono:'IBM Plex Mono', 'SFMono-Regular', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--base);
+    font-family:var(--font-body);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  .app-header{
+    padding:22px 24px 18px;
+    max-width:1180px;
+    margin:0 auto;
+    text-align:center;
+  }
+  .app-eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--brand);
+    margin:0 0 6px;
+  }
+  .app-title{
+    font-family:var(--font-display);
+    font-size:26px;
+    font-weight:700;
+    margin:0 0 4px;
+    letter-spacing:-0.01em;
+  }
+  .app-sub{
+    font-size:14px;
+    color:var(--ink-soft);
+    margin:0 0 8px;
+    max-width:680px;
+    line-height:1.5;
+  }
+  .app-scale-note{
+    font-size:12px; color:var(--brand); font-weight:600; margin:0 0 18px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .app-switch{
+    display:inline-flex;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:4px;
+    gap:4px;
+  }
+  .app-switch button{
+    font-family:var(--font-display);
+    font-size:14px;
+    font-weight:600;
+    border:none;
+    background:transparent;
+    color:var(--ink-soft);
+    padding:9px 20px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:background .2s ease, color .2s ease;
+  }
+  .app-switch button.is-active{
+    background:var(--ink);
+    color:#fff;
+  }
+  .app-stage{
+    max-width:1180px;
+    margin:0 auto 60px;
+    padding:0 24px;
+  }
+  .view{display:none;}
+  .view.is-active{display:block;}
+
+  /* ===== shared: search / chips / pagination / bulk bar ===== */
+  .search-input{
+    width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 12px;
+    font-family:var(--font-body); font-size:12.5px; background:var(--surface); color:var(--ink);
+  }
+  .search-input:focus{outline:2px solid var(--brand); outline-offset:1px;}
+  .chip-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+  .chip{
+    font-family:var(--font-mono); font-size:10.5px; font-weight:600; padding:5px 11px; border-radius:999px;
+    background:var(--base); color:var(--ink-soft); cursor:pointer; border:1px solid var(--line); user-select:none;
+  }
+  .chip.is-active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .filter-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .filter-select{
+    flex:1; min-width:140px; border:1px solid var(--line); border-radius:10px; padding:9px 10px;
+    font-family:var(--font-body); font-size:12px; background:var(--surface); color:var(--ink);
+  }
+  .filter-select:focus{outline:2px solid var(--brand); outline-offset:1px;}
+  .table-toolbar{display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap;}
+  .table-toolbar .search-input{max-width:260px;}
+  .table-summary{font-size:11.5px; color:var(--ink-soft); margin:10px 0 0;}
+  .bulk-bar{
+    display:none; align-items:center; justify-content:space-between; background:var(--brand-soft); color:var(--brand);
+    border-radius:10px; padding:9px 14px; font-size:12.5px; font-weight:600; margin:10px 0 0;
+  }
+  .bulk-bar.is-visible{display:flex;}
+  .bulk-bar button{
+    background:var(--brand); color:#fff; border:none; border-radius:7px; padding:6px 12px;
+    font-family:var(--font-display); font-weight:600; font-size:11.5px; cursor:pointer;
+  }
+  .pagination{display:flex; align-items:center; justify-content:space-between; margin-top:12px; font-size:11.5px; color:var(--ink-soft);}
+  .pagination button{
+    background:var(--base); border:1px solid var(--line); border-radius:8px; padding:6px 12px; cursor:pointer;
+    font-family:var(--font-body); font-size:12px; color:var(--ink);
+  }
+  .pagination button:disabled{opacity:.4; cursor:not-allowed;}
+
+  /* ===== onboarding wizard ===== */
+  .ma-phone-col{width:340px;}
+  .mode-switch{display:flex; gap:6px; margin-bottom:10px;}
+  .mode-switch button{
+    flex:1; font-family:var(--font-display); font-size:10.5px; font-weight:600; padding:8px 6px; border-radius:9px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer;
+  }
+  .mode-switch button.is-active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .wiz-progress-label{font-family:var(--font-mono); font-size:10.5px; color:var(--brand); font-weight:600; margin-bottom:7px;}
+  .wiz-progress-bar-bg{height:5px; background:var(--line); border-radius:99px; overflow:hidden;}
+  .wiz-progress-bar-fill{height:100%; background:var(--brand); border-radius:99px; transition:width .3s ease;}
+  .wiz-step{display:none;}
+  .wiz-step.is-active{display:block; animation:fadein .25s ease;}
+  .wiz-field{margin-bottom:12px;}
+  .wiz-field label{font-size:10.5px; color:var(--ink-soft); font-weight:600; display:block; margin-bottom:5px;}
+  .wiz-field input{width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:12px; font-family:var(--font-body);}
+  .wiz-btn{width:100%; background:var(--ink); color:#fff; border:none; border-radius:12px; padding:12px; font-family:var(--font-display); font-weight:700; font-size:13px; cursor:pointer; margin-top:14px;}
+  .wiz-btn.secondary{background:var(--surface); color:var(--ink); border:1px solid var(--line); margin-top:8px;}
+  .wiz-btn:disabled{opacity:.4; cursor:not-allowed;}
+  .kyc-item{display:flex; justify-content:space-between; align-items:center; background:var(--base); border-radius:10px; padding:10px 12px; margin-bottom:8px;}
+  .kyc-name{font-size:11.5px; font-weight:600;}
+  .kyc-hint{font-size:9.5px; color:var(--muted); margin-top:1px;}
+  .kyc-upload-btn{background:var(--brand); color:#fff; border:none; border-radius:7px; padding:6px 12px; font-family:var(--font-display); font-weight:600; font-size:10.5px; cursor:pointer; flex-shrink:0;}
+  .kyc-upload-btn.done{background:var(--live);}
+  .journey-map{margin-top:12px;}
+  .jm-row{display:flex; align-items:center; flex-wrap:wrap; gap:4px;}
+  .jm-box{
+    font-family:var(--font-mono); font-size:9px; font-weight:600; text-align:center; padding:8px 5px; border-radius:8px;
+    border:1.5px solid var(--line); background:var(--base); color:var(--ink-soft); flex:1; min-width:50px;
+  }
+  .jm-box.done{border-color:var(--live); background:var(--live-soft); color:#046C56;}
+  .jm-box.current{border-color:var(--brand); background:var(--brand-soft); color:var(--brand);}
+  .jm-box.next{border-color:var(--gold); background:var(--gold-soft); color:var(--gold);}
+  .jm-arrow{color:var(--muted); font-size:11px; flex-shrink:0;}
+  .jm-down{color:var(--muted); font-size:14px; margin:2px 0 2px 14%;}
+  .inv-row{display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px;}
+  .inv-row.low{border-color:var(--urgency); background:var(--urgency-soft);}
+  .inv-name{font-size:12px; font-weight:600;}
+  .inv-meta{font-size:9.5px; color:var(--ink-soft); margin-top:2px;}
+  .inv-right{text-align:right;}
+  .inv-qty{font-family:var(--font-mono); font-size:11px; font-weight:600;}
+  .inv-price{font-size:10px; color:var(--ink-soft); margin-top:2px;}
+  .inv-restock{background:var(--brand); color:#fff; border:none; border-radius:7px; padding:5px 10px; font-family:var(--font-display); font-weight:600; font-size:10px; cursor:pointer;}
+  .inv-sync{font-size:9px; margin-top:3px; font-weight:600;}
+  .inv-sync.synced{color:var(--live);}
+  .inv-sync.manual{color:var(--muted);}
+  .inv-sync.stale{color:var(--urgency);}
+  .cat-add-btn{background:var(--brand); color:#fff; border:none; border-radius:8px; padding:7px 12px; font-family:var(--font-display); font-weight:600; font-size:11px; cursor:pointer;}
+  .cat-row{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px;}
+  .cat-row.low{border-color:var(--urgency); background:var(--urgency-soft);}
+  .cat-row-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+  .cat-name{font-size:12px; font-weight:600;}
+  .cat-meta{font-size:9.5px; color:var(--ink-soft); margin-top:2px;}
+  .cat-actions{display:flex; gap:5px; flex-shrink:0;}
+  .cat-icon-btn{background:var(--base); border:1px solid var(--line); border-radius:6px; width:24px; height:24px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:11px; color:var(--ink-soft); padding:0;}
+  .cat-icon-btn.danger{color:var(--urgency);}
+  .cat-row-bottom{display:flex; justify-content:space-between; align-items:center; margin-top:7px;}
+  .cat-price{font-family:var(--font-mono); font-size:12px; font-weight:600;}
+  .cat-stock{font-family:var(--font-mono); font-size:11px;}
+  .cat-stock.low-text{color:var(--urgency); font-weight:600;}
+  .cat-edit-form .wiz-field{margin-bottom:8px;}
+  .cat-edit-actions{display:flex; gap:8px; margin-top:4px;}
+  .cat-edit-actions button{flex:1; padding:8px; border-radius:8px; font-family:var(--font-display); font-weight:600; font-size:11px; cursor:pointer; border:none;}
+  .cat-save-btn{background:var(--brand); color:#fff;}
+  .cat-cancel-btn{background:var(--base); color:var(--ink-soft); border:1px solid var(--line);}
+  .tab-seg{display:flex; gap:4px; background:var(--base); border-radius:10px; padding:3px; margin-bottom:10px;}
+  .tab-seg button{flex:1; border:none; background:none; font-family:var(--font-display); font-weight:600; font-size:11px; padding:8px 4px; border-radius:8px; cursor:pointer; color:var(--ink-soft);}
+  .tab-seg button.is-active{background:var(--surface); color:var(--ink); box-shadow:var(--shadow-sm);}
+  .ord-list{max-height:230px; overflow-y:auto; padding-right:2px; margin-top:8px;}
+  .ord-row{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:7px; cursor:pointer;}
+  .ord-row.is-active{border-color:var(--brand); background:var(--brand-soft);}
+  .ord-row-top{display:flex; justify-content:space-between; align-items:center;}
+  .ord-id{font-family:var(--font-mono); font-weight:600; font-size:12px;}
+  .ord-status-chip{font-size:9.5px; font-weight:700; padding:3px 8px; border-radius:999px; white-space:nowrap;}
+  .ord-status-chip.pending{background:var(--base); color:var(--ink-soft);}
+  .ord-status-chip.packed{background:var(--brand-soft); color:var(--brand);}
+  .ord-status-chip.shipped{background:var(--live-soft); color:#046C56;}
+  .ord-status-chip.delivered{background:var(--live-soft); color:#046C56;}
+  .ord-status-chip.delayed{background:var(--urgency-soft); color:var(--urgency);}
+  .ord-row-meta{font-size:10px; color:var(--ink-soft); margin-top:4px;}
+  .ord-row-bottom{display:flex; justify-content:space-between; align-items:center; margin-top:6px;}
+  .ord-value{font-family:var(--font-mono); font-size:12px; font-weight:600;}
+  .ord-split-tag{font-size:9px; color:var(--gold); font-weight:700;}
+  .toggle-row{display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:9px 0; border-bottom:1px solid var(--line);}
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-row-label{font-weight:600;}
+  .toggle-row-sub{font-size:10px; color:var(--ink-soft); margin-top:2px; font-weight:400;}
+  .toggle-switch{width:38px; height:22px; border-radius:99px; background:var(--line); position:relative; cursor:pointer; flex-shrink:0; border:none;}
+  .toggle-switch::after{content:''; position:absolute; width:18px; height:18px; border-radius:50%; background:#fff; top:2px; left:2px; transition:left .18s ease; box-shadow:0 1px 2px rgba(0,0,0,.2);}
+  .toggle-switch.is-on{background:var(--brand);}
+  .toggle-switch.is-on::after{left:18px;}
+  .payout-current-card{background:linear-gradient(135deg, var(--ink), #1E2E52); color:#fff; border-radius:14px; padding:16px;}
+  .payout-current-label{font-size:10.5px; opacity:.7; font-family:var(--font-mono);}
+  .payout-current-amount{font-family:var(--font-mono); font-size:24px; font-weight:700; margin:4px 0 2px;}
+  .payout-current-meta{font-size:11px; opacity:.8; margin-bottom:14px;}
+  .payout-pipeline{display:flex; align-items:flex-start;}
+  .pp-step{flex:1; display:flex; flex-direction:column; align-items:center; position:relative;}
+  .pp-step::before{content:''; position:absolute; top:11px; left:-50%; width:100%; height:2px; background:rgba(255,255,255,.2); z-index:0;}
+  .pp-step:first-child::before{display:none;}
+  .pp-step.done::before{background:rgba(255,255,255,.6);}
+  .pp-dot{width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,.15); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; z-index:1;}
+  .pp-step.done .pp-dot{background:#fff; color:var(--ink);}
+  .pp-step.current .pp-dot{background:rgba(255,255,255,.9); color:var(--ink); box-shadow:0 0 0 3px rgba(255,255,255,.25);}
+  .pp-label{font-size:8.5px; text-align:center; margin-top:6px; opacity:.85; line-height:1.3;}
+  .payout-current-sub{font-size:10.5px; opacity:.8; margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,.15);}
+  .payout-hist-item{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px; cursor:pointer;}
+  .payout-hist-top{display:flex; justify-content:space-between; align-items:center;}
+  .payout-hist-date{font-size:12px; font-weight:600;}
+  .payout-hist-meta{font-size:9.5px; color:var(--ink-soft); margin-top:2px;}
+  .payout-hist-amount{font-family:var(--font-mono); font-size:13px; font-weight:700;}
+  .payout-hist-detail{display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line);}
+  .payout-hist-item.is-open .payout-hist-detail{display:block;}
+  .payout-hist-row{display:flex; justify-content:space-between; font-size:11px; padding:5px 0;}
+  .payout-hist-orders{font-size:10px; color:var(--ink-soft); margin-top:6px; line-height:1.6;}
+  .sla-trend{margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); display:flex; justify-content:space-between; align-items:center;}
+  .sla-trend-label{font-size:9.5px; color:var(--muted);}
+  .order-lookup-list{margin-top:8px; display:flex; flex-direction:column; gap:6px; max-height:230px; overflow-y:auto; padding-right:2px;}
+  .olk-row{display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:9px 12px; cursor:pointer; font-size:12px;}
+  .olk-row.is-active{border-color:var(--brand); background:var(--brand-soft);}
+  .olk-row .olk-id{font-family:var(--font-mono); font-weight:600;}
+  .olk-row .olk-meta{font-size:10.5px; color:var(--ink-soft); margin-top:2px;}
+  .olk-flag{font-size:9.5px; font-weight:700; color:var(--urgency); white-space:nowrap;}
+
+  /* ===== MERCHANT APP (phone frame) ===== */
+  .ma-layout{
+    display:grid;
+    grid-template-columns:340px 1fr;
+    gap:32px;
+    align-items:start;
+  }
+  @media (max-width:860px){ .ma-layout{grid-template-columns:1fr;} }
+
+  .ma-phone{
+    background:var(--ink);
+    border-radius:40px;
+    padding:14px;
+    box-shadow:0 30px 60px -20px rgba(15,27,51,.35);
+    width:340px;
+  }
+  .ma-notch{
+    height:22px;
+    display:flex;
+    justify-content:center;
+    align-items:flex-end;
+    margin-bottom:6px;
+  }
+  .ma-notch::after{
+    content:'';
+    width:70px;height:14px;
+    background:#000;
+    border-radius:10px;
+  }
+  .ma-screen{
+    background:var(--surface);
+    border-radius:28px;
+    height:640px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+  }
+  .ma-topbar{
+    padding:18px 18px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  .ma-hello{font-size:12px; color:var(--muted); margin:0 0 2px;}
+  .ma-shopname{font-family:var(--font-display); font-weight:700; font-size:17px; margin:0; display:flex; align-items:center; gap:8px;}
+  .tier-pill{
+    font-family:var(--font-mono);
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.04em;
+    padding:3px 8px;
+    border-radius:999px;
+    background:var(--gold-soft);
+    color:var(--gold);
+  }
+  .ma-panels{flex:1; overflow-y:auto; padding:16px 18px 90px;}
+  .ma-panel{display:none;}
+  .ma-panel.is-active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0;}
+  .stat-card{background:var(--base); border-radius:12px; padding:12px;}
+  .stat-num{font-family:var(--font-mono); font-size:18px; font-weight:600;}
+  .stat-label{font-size:11px; color:var(--ink-soft); margin-top:2px;}
+
+  .cta-live{
+    display:flex; justify-content:space-between; align-items:center;
+    background:linear-gradient(135deg, var(--ink) 0%, #1E2E52 100%);
+    color:#fff; border-radius:14px; padding:16px; margin-top:6px; cursor:pointer;
+    border:none; width:100%; text-align:left; font-family:var(--font-body);
+  }
+  .cta-live strong{font-family:var(--font-display); font-size:14px; display:block; margin-bottom:2px;}
+  .cta-live span{font-size:12px; opacity:.75;}
+  .live-dot{width:8px; height:8px; border-radius:50%; background:var(--live); display:inline-block; margin-right:6px; animation:pulse 1.4s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,184,148,.55);}70%{box-shadow:0 0 0 8px rgba(0,184,148,0);}100%{box-shadow:0 0 0 0 rgba(0,184,148,0);}}
+
+  .section-label{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); margin:18px 0 8px;
+  }
+  .section-label:first-child{margin-top:0;}
+
+  /* Auction list (browse many rounds) */
+  .auction-list-summary{font-size:10.5px; color:var(--muted); margin:8px 0 0;}
+  .auction-list{margin-top:8px; display:flex; flex-direction:column; gap:7px; max-height:220px; overflow-y:auto; padding-right:2px;}
+  .auction-list-item{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:9px 11px; cursor:pointer;
+  }
+  .auction-list-item.is-active{border-color:var(--brand); background:var(--brand-soft);}
+  .auction-list-item.is-closed{opacity:.4; cursor:default;}
+  .ali-top{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .ali-cat{font-family:var(--font-display); font-weight:700; font-size:11.5px;}
+  .ali-timer{font-family:var(--font-mono); font-size:10.5px; color:var(--urgency); font-weight:600; white-space:nowrap;}
+  .ali-zone{font-size:9.5px; color:var(--ink-soft); margin-top:1px;}
+  .ali-meta{display:flex; gap:9px; font-size:9.5px; color:var(--muted); margin-top:5px;}
+
+  /* Auction detail / bidding room */
+  .auction-card{background:var(--base); border-radius:14px; padding:14px; border:1px solid var(--line);}
+  .auction-head{display:flex; justify-content:space-between; align-items:flex-start;}
+  .auction-cat{font-family:var(--font-display); font-weight:700; font-size:14px; line-height:1.3; max-width:170px;}
+  .auction-zone{font-size:11px; color:var(--ink-soft); margin-top:2px;}
+  .timer-box{text-align:right;}
+  .timer-num{font-family:var(--font-mono); font-size:20px; font-weight:600; color:var(--urgency);}
+  .timer-caption{font-size:10px; color:var(--muted);}
+  .demand-strip{
+    margin-top:10px; background:var(--live-soft); color:#046C56; font-size:12px; font-weight:600;
+    padding:7px 10px; border-radius:8px; display:flex; align-items:center; gap:6px;
+  }
+  .bid-list{margin-top:12px; display:flex; flex-direction:column; gap:6px;}
+  .bid-row{
+    display:grid; grid-template-columns:22px 1fr auto; gap:8px; align-items:center;
+    background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:8px 10px;
+    animation:slidein .35s ease;
+  }
+  @keyframes slidein{from{opacity:0; transform:translateX(-6px);} to{opacity:1; transform:translateX(0);}}
+  .bid-row.is-you{border-color:var(--brand); background:var(--brand-soft);}
+  .rank-badge{
+    font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--muted);
+    width:20px; height:20px; border-radius:50%; background:var(--base); display:flex; align-items:center; justify-content:center;
+  }
+  .bid-row:nth-child(1) .rank-badge{background:var(--gold-soft); color:var(--gold);}
+  .bid-name{font-size:12.5px; font-weight:600;}
+  .bid-meta{font-size:10px; color:var(--muted);}
+  .bid-amount{font-family:var(--font-mono); font-size:13px; font-weight:600; text-align:right;}
+  .bid-score{font-size:10px; color:var(--muted); text-align:right;}
+
+  .bid-form{display:flex; gap:8px; margin-top:12px;}
+  .bid-form input{
+    flex:1; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    font-family:var(--font-mono); font-size:13px; background:var(--surface);
+  }
+  .bid-form button{
+    background:var(--brand); color:#fff; border:none; border-radius:10px; padding:0 16px;
+    font-family:var(--font-display); font-weight:600; font-size:13px; cursor:pointer;
+  }
+  .bid-hint{font-size:10.5px; color:var(--muted); margin-top:6px;}
+  .round-closed{margin-top:10px; background:var(--ink); color:#fff; border-radius:10px; padding:12px; font-size:12px;}
+  .link-back{
+    background:none; border:none; color:var(--brand); font-family:var(--font-display); font-weight:600;
+    font-size:11.5px; cursor:pointer; padding:0; margin-top:12px;
+  }
+
+  /* Orders / split order panel */
+  .order-parent{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:var(--shadow-sm);}
+  .order-parent-top{display:flex; justify-content:space-between; align-items:flex-start;}
+  .order-id{font-family:var(--font-mono); font-size:11px; color:var(--muted);}
+  .order-total{font-family:var(--font-mono); font-weight:600; font-size:15px; text-align:right;}
+  .order-meta{font-size:10.5px; color:var(--ink-soft); margin-top:2px;}
+  .fork{position:relative; margin:16px 0 0 8px; padding-left:20px; border-left:2px dashed var(--line);}
+  .fork-item{
+    position:relative; margin-bottom:12px; background:var(--base); border:1px solid var(--line);
+    border-radius:12px; padding:12px; box-shadow:var(--shadow-sm);
+  }
+  .fork-item:last-child{margin-bottom:0;}
+  .fork-item::before{content:''; position:absolute; left:-20px; top:16px; width:18px; height:2px; background:var(--line);}
+  .fork-item.mine{border-color:var(--brand); background:var(--brand-soft);}
+  .fork-head{display:flex; justify-content:space-between; align-items:flex-start;}
+  .fork-merchant{font-size:12.5px; font-weight:700;}
+  .fork-you-tag{font-size:9.5px; font-weight:700; color:var(--brand); vertical-align:middle;}
+  .fork-logistics{font-size:10px; color:var(--ink-soft); display:flex; align-items:center; gap:4px; margin-top:3px;}
+  .fork-logistics svg{width:12px; height:12px; flex-shrink:0;}
+  .fork-items{font-size:11px; color:var(--ink-soft); margin-top:6px;}
+  .stepper{display:flex; align-items:flex-start; margin-top:12px;}
+  .step{display:flex; flex-direction:column; align-items:center; flex:1; position:relative;}
+  .step-dot{width:10px; height:10px; border-radius:50%; background:var(--surface); border:2px solid var(--line); z-index:1;}
+  .step.done .step-dot{background:var(--brand); border-color:var(--brand);}
+  .step.current .step-dot{border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft);}
+  .step-label{font-size:8.5px; color:var(--muted); margin-top:5px; text-align:center; line-height:1.2;}
+  .step.done .step-label, .step.current .step-label{color:var(--ink); font-weight:600;}
+  .step-line{position:absolute; top:4px; left:-50%; width:100%; height:2px; background:var(--line); z-index:0;}
+  .step.done .step-line{background:var(--brand);}
+  .step:first-child .step-line{display:none;}
+  .sla-line{
+    display:flex; justify-content:space-between; align-items:center; margin-top:11px;
+    font-size:10px; padding-top:9px; border-top:1px dashed var(--line);
+  }
+  .sla-ok{color:var(--live); font-weight:700;}
+  .sla-warn{color:var(--urgency); font-weight:700;}
+
+  /* Profile panel */
+  .tier-track{background:var(--base); border-radius:14px; padding:16px; border:1px solid var(--line);}
+  .bar-bg{height:8px; background:var(--line); border-radius:99px; margin:10px 0; overflow:hidden;}
+  .bar-fill{height:100%; background:linear-gradient(90deg, var(--gold), #E0B84A); border-radius:99px;}
+  .kv-row{display:flex; justify-content:space-between; font-size:12.5px; padding:8px 0; border-bottom:1px solid var(--line);}
+  .kv-row:last-child{border-bottom:none;}
+  .kv-row b{font-family:var(--font-mono);}
+
+  .ma-tabbar{
+    position:absolute; bottom:0; left:0; right:0; background:var(--surface);
+    border-top:1px solid var(--line); display:flex; padding:8px 6px 12px;
+  }
+  .ma-tab{
+    flex:1; border:none; background:none; display:flex; flex-direction:column; align-items:center; gap:4px;
+    font-family:var(--font-body); font-size:10px; color:var(--muted); cursor:pointer; padding:4px 0;
+  }
+  .ma-tab.is-active{color:var(--brand); font-weight:600;}
+  .ma-tab svg{width:20px; height:20px;}
+
+  .ma-side-note{padding-top:8px; font-size:12.5px; color:var(--ink-soft); line-height:1.6; max-width:420px;}
+  .ma-side-note h3{font-family:var(--font-display); font-size:15px; margin:18px 0 6px;}
+  .ma-side-note h3:first-child{margin-top:0;}
+
+  /* ===== ADMIN CONTROL CENTER ===== */
+  .ac-layout{display:grid; grid-template-columns:210px 1fr; gap:0; background:var(--surface); border-radius:20px; overflow:hidden; border:1px solid var(--line); min-height:640px; box-shadow:var(--shadow-md);}
+  @media (max-width:760px){ .ac-layout{grid-template-columns:1fr;} .ac-nav{display:flex; overflow-x:auto;} }
+  .ac-nav{background:var(--ink); padding:20px 12px;}
+  .ac-nav-brand{font-family:var(--font-display); color:#fff; font-weight:700; font-size:14px; padding:0 10px 2px;}
+  .ac-nav-tag{font-family:var(--font-mono); font-size:10px; color:#6E7DA8; padding:0 10px 16px; display:block;}
+  .ac-nav button{
+    display:flex; align-items:center; gap:9px; width:100%; text-align:left; background:none; border:none; color:#B7C0D6;
+    font-family:var(--font-body); font-size:13px; padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:2px;
+  }
+  .ac-nav button.is-active{background:rgba(255,255,255,.1); color:#fff; font-weight:600;}
+  .ac-nav svg{width:16px; height:16px; flex-shrink:0;}
+  .ac-panels{padding:26px 28px;}
+  .ac-panel{display:none;}
+  .ac-panel.is-active{display:block; animation:fadein .25s ease;}
+  .ac-panel-title{font-family:var(--font-display); font-size:18px; font-weight:700; margin:0 0 4px;}
+  .ac-panel-sub{font-size:13px; color:var(--ink-soft); margin:0 0 4px; max-width:640px; line-height:1.5;}
+  .section-title{font-family:var(--font-display); font-weight:700; font-size:14px; margin:26px 0 4px;}
+  .section-title:first-of-type{margin-top:18px;}
+  .section-sub{font-size:11.5px; color:var(--ink-soft); margin:0 0 12px;}
+
+  .kpi-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
+  @media (max-width:700px){ .kpi-grid{grid-template-columns:1fr 1fr;} }
+  .kpi-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow-sm);}
+  .kpi-label{font-size:11.5px; color:var(--ink-soft);}
+  .kpi-num{font-family:var(--font-mono); font-size:22px; font-weight:600; margin:6px 0 2px;}
+  .kpi-spark{display:block; margin:2px 0 6px;}
+  .kpi-trend{font-size:11px; font-weight:600;}
+  .kpi-trend.up{color:var(--live);}
+  .kpi-trend.down{color:var(--urgency);}
+
+  .chart-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:20px 22px 34px; margin-top:16px; box-shadow:var(--shadow-sm);
+  }
+  .chart-title{font-family:var(--font-display); font-weight:700; font-size:14px; margin:0 0 2px;}
+  .chart-sub{font-size:11.5px; color:var(--ink-soft); margin:0 0 20px;}
+  .bars{display:flex; align-items:flex-end; gap:14px; height:120px; padding:0 4px;}
+  .bar{flex:1; background:linear-gradient(180deg, var(--brand), #7C90FF); border-radius:6px 6px 2px 2px; position:relative; min-height:4px;}
+  .bar.is-peak{background:linear-gradient(180deg, var(--gold), #E0B84A);}
+  .bar-value{position:absolute; top:-20px; left:0; right:0; text-align:center; font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); white-space:nowrap;}
+  .bar-label{position:absolute; bottom:-20px; left:0; right:0; text-align:center; font-size:10px; color:var(--muted);}
+
+  .payout-flow{display:flex; align-items:stretch; gap:0; margin:14px 0 8px; overflow-x:auto; padding-bottom:4px;}
+  .flow-step{background:var(--base); border:2px solid transparent; border-radius:12px; padding:12px 14px; min-width:150px; flex-shrink:0; cursor:pointer; transition:border-color .15s ease;}
+  .flow-step:hover{border-color:var(--line);}
+  .flow-step.is-active{border-color:var(--brand); background:var(--brand-soft);}
+  .po-stage-badge{font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .po-stage-badge.delivered{background:var(--base); color:var(--ink-soft);}
+  .po-stage-badge.holding{background:var(--gold-soft); color:var(--gold);}
+  .po-stage-badge.commission{background:var(--brand-soft); color:var(--brand);}
+  .po-stage-badge.paid{background:var(--live-soft); color:#046C56;}
+  .po-review-flag{font-size:9.5px; font-weight:700; color:var(--urgency); display:block; margin-top:3px;}
+  .po-edit-form .wiz-field{margin-bottom:10px;}
+  .po-edit-actions{display:flex; gap:8px; margin-top:4px;}
+  .po-edit-actions button{flex:1; padding:10px; border-radius:9px; font-family:var(--font-display); font-weight:600; font-size:12px; cursor:pointer; border:none;}
+  .po-save-btn{background:var(--brand); color:#fff;}
+  .po-cancel-btn{background:var(--base); color:var(--ink-soft); border:1px solid var(--line);}
+  .po-corrected-tag{font-size:9.5px; font-weight:700; color:var(--brand); display:inline-block; margin-top:8px;}
+  .flow-step-num{font-family:var(--font-mono); font-size:10px; color:var(--brand); font-weight:700;}
+  .flow-step-title{font-family:var(--font-display); font-weight:700; font-size:12.5px; margin:5px 0 3px;}
+  .flow-step-sub{font-size:10.5px; color:var(--ink-soft); line-height:1.4;}
+  .flow-arrow{color:var(--muted); font-size:16px; padding:0 10px; flex-shrink:0; align-self:center;}
+
+  .sla-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:6px;}
+  @media (max-width:760px){ .sla-grid{grid-template-columns:1fr;} }
+  .sla-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow-sm);}
+  .sla-card-head{display:flex; align-items:center; gap:9px; margin-bottom:10px;}
+  .sla-card-icon{
+    width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    background:var(--brand-soft); color:var(--brand); flex-shrink:0;
+  }
+  .sla-card-icon svg{width:16px; height:16px;}
+  .sla-card-title{font-family:var(--font-display); font-weight:700; font-size:13px;}
+  .sla-item{display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:11.5px; padding:7px 0; border-bottom:1px solid var(--line);}
+  .sla-item:last-child{border-bottom:none;}
+  .sla-status{font-size:10px; font-weight:700; padding:3px 8px; border-radius:999px; white-space:nowrap;}
+  .sla-status.met{background:var(--live-soft); color:#046C56;}
+  .sla-status.breach{background:var(--urgency-soft); color:var(--urgency);}
+
+  table{width:100%; border-collapse:collapse; margin-top:6px;}
+  th{
+    text-align:left; font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line);
+  }
+  td{padding:11px 10px; font-size:12.5px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .btn-sm{font-family:var(--font-display); font-weight:600; font-size:12px; border:none; border-radius:8px; padding:7px 12px; cursor:pointer;}
+  .btn-approve{background:var(--live); color:#fff;}
+  .btn-reject{background:var(--surface); color:var(--urgency); border:1px solid var(--urgency);}
+  .badge{font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .badge-verified{background:var(--live-soft); color:#046C56;}
+  .badge-approved{background:var(--brand-soft); color:var(--brand);}
+  .badge-rejected{background:var(--urgency-soft); color:var(--urgency);}
+  .badge-gold{background:var(--gold-soft); color:var(--gold);}
+  .badge-standard{background:var(--base); color:var(--ink-soft);}
+  .mini-bar-bg{width:70px; height:6px; background:var(--line); border-radius:99px; display:inline-block; margin-right:8px; vertical-align:middle;}
+  .mini-bar-fill{height:100%; border-radius:99px; background:var(--live); display:block;}
+  .flag-row{background:var(--urgency-soft);}
+  .flag-text{color:var(--urgency); font-weight:600; font-size:11.5px;}
+  .live-tag{font-family:var(--font-mono); font-size:11px; color:var(--urgency); font-weight:600;}
+  .dispute-detail-card{background:var(--base); border-radius:14px; padding:16px; margin-bottom:14px;}
+  .dispute-detail-row{display:flex; justify-content:space-between; font-size:12.5px; padding:7px 0; border-bottom:1px solid var(--line);}
+  .dispute-detail-row:last-child{border-bottom:none;}
+  .dispute-evidence{background:var(--surface); border:1px dashed var(--line); border-radius:10px; padding:12px; font-size:11.5px; color:var(--ink-soft); margin-bottom:16px;}
+  .dispute-resolve-title{font-family:var(--font-display); font-weight:700; font-size:13px; margin:0 0 10px;}
+  .dispute-resolve-actions{display:flex; gap:8px; flex-wrap:wrap;}
+  .dispute-resolve-actions button{font-family:var(--font-display); font-weight:600; font-size:12px; border:none; border-radius:9px; padding:10px 14px; cursor:pointer;}
+  .btn-refund{background:var(--urgency); color:#fff;}
+  .btn-merchant{background:var(--live); color:#fff;}
+  .btn-escalate{background:var(--surface); border:1px solid var(--line); color:var(--ink);}
+  .dispute-resolved-banner{background:var(--live-soft); color:#046C56; border-radius:10px; padding:14px; font-size:12.5px; font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-switch">
+    <button id="btn-merchant" class="is-active">Merchant App</button>
+    <button id="btn-admin">Admin Control Center</button>
+  </div>
+</div>
+
+<div class="app-stage">
+
+  <!-- ================= MERCHANT APP VIEW ================= -->
+  <div class="view is-active" id="view-merchant">
+    <div class="ma-layout">
+      <div class="ma-phone-col">
+        <div class="mode-switch">
+          <button id="mode-onboarding">🆕 New Merchant Onboarding</button>
+          <button id="mode-live" class="is-active">📱 Live Dashboard</button>
+        </div>
+        <div class="ma-phone">
+        <div class="ma-notch"></div>
+        <div class="ma-screen">
+          <div id="live-app-chrome" style="display:flex; flex-direction:column; height:100%;">
+          <div class="ma-topbar">
+            <p class="ma-hello">Good afternoon</p>
+            <p class="ma-shopname">Baan Ruen Home Co. <span class="tier-pill">TIER GOLD</span></p>
+          </div>
+
+          <div class="ma-panels">
+
+            <!-- HOME -->
+            <div class="ma-panel is-active" data-panel="home">
+              <div class="stat-grid">
+                <div class="stat-card"><div class="stat-num">฿12,450</div><div class="stat-label">Sales today</div></div>
+                <div class="stat-card"><div class="stat-num">8</div><div class="stat-label">Pending orders</div></div>
+                <div class="stat-card"><div class="stat-num">98.2%</div><div class="stat-label">Fulfillment rate</div></div>
+                <div class="stat-card"><div class="stat-num">5%</div><div class="stat-label">Commission (Gold)</div></div>
+              </div>
+              <button class="cta-live" data-goto="auction">
+                <div>
+                  <strong><span class="live-dot"></span>20 Live Auctions right now</strong>
+                  <span>Across 6 zones · Kitchen &amp; Storage demand is spiking</span>
+                </div>
+                <span>→</span>
+              </button>
+              <p class="section-label">Recent activity</p>
+              <div class="kv-row"><span>Order #A2291 packed</span><b>2m ago</b></div>
+              <div class="kv-row"><span>Want-List match: Stackable Bin 12L</span><b>18m ago</b></div>
+              <div class="kv-row"><span>Payout settled</span><b>Yesterday</b></div>
+            </div>
+
+            <!-- AUCTION -->
+            <div class="ma-panel" data-panel="auction">
+              <p class="section-label">Live auctions matching your catalog</p>
+              <input type="text" class="search-input" id="auction-search" placeholder="Search category or zone">
+              <div class="filter-row">
+                <select class="filter-select" id="auction-cat-select"></select>
+                <select class="filter-select" id="auction-zone-select"></select>
+              </div>
+              <p class="auction-list-summary" id="auction-list-summary"></p>
+              <div class="auction-list" id="auction-list"></div>
+
+              <p class="section-label">Bidding room</p>
+              <div class="auction-card">
+                <div class="auction-head">
+                  <div>
+                    <div class="auction-cat" id="detail-cat">—</div>
+                    <div class="auction-zone" id="detail-zone">—</div>
+                  </div>
+                  <div class="timer-box">
+                    <div class="timer-num" id="timer-display">00:00</div>
+                    <div class="timer-caption">time left</div>
+                  </div>
+                </div>
+                <div class="demand-strip" id="detail-demand">—</div>
+
+                <p class="section-label" style="margin:14px 0 6px;">Leaderboard · ranked by price + fulfillment + rating</p>
+                <div class="bid-list" id="bid-list"></div>
+
+                <div id="bid-form-wrap">
+                  <div class="bid-form">
+                    <input type="number" id="bid-input" placeholder="Your price offer, e.g. 175 — lower wins" min="0" step="5">
+                    <button id="bid-submit">Place Bid</button>
+                  </div>
+                  <p class="bid-hint">Bids are for feed placement, not product price. Ranking is transparent: price, fulfillment score, and rating all count.</p>
+                </div>
+                <div id="round-closed-wrap" style="display:none;"></div>
+                <button class="link-back" id="back-to-list">↑ Back to all live auctions</button>
+              </div>
+            </div>
+
+            <!-- ORDERS -->
+            <div class="ma-panel" data-panel="orders">
+              <div class="tab-seg" id="orders-tab-seg">
+                <button class="is-active" data-ordertab="list">Orders</button>
+                <button data-ordertab="analytics">Analytics</button>
+              </div>
+
+              <div id="orders-list-view">
+                <input type="text" class="search-input" id="ord-search" placeholder="Search Order ID or shopper">
+                <select class="search-input" id="ord-status-filter" style="margin-top:8px; cursor:pointer;">
+                  <option value="All">All statuses</option>
+                  <optgroup label="Fulfillment">
+                    <option value="Pending">Pending</option>
+                    <option value="Packed">Packed</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Delayed">Delayed</option>
+                  </optgroup>
+                  <optgroup label="Payout">
+                    <option value="payout:holding">Holding</option>
+                    <option value="payout:ready">Commission deducted</option>
+                    <option value="payout:paid">Paid out</option>
+                  </optgroup>
+                </select>
+                <div class="chip-row" id="ord-sort-chips" style="margin-top:8px;"></div>
+                <p class="table-summary" id="ord-summary"></p>
+                <div class="ord-list" id="ord-list"></div>
+
+                <p class="section-label">Timeline</p>
+                <div id="ord-detail"></div>
+                <p class="ma-side-note" style="padding-top:10px; max-width:none;">You see your own sub-order in full detail. A sibling merchant's sub-order shows only a status word, not their identity, courier, or fulfillment stage — enough to answer a shopper's "where's the rest of my order," nothing that hands you a competitor's operating data. The full picture exists in the Admin Control Center and the shopper app.</p>
+              </div>
+
+              <div id="orders-analytics-view" style="display:none;">
+                <p class="section-label" style="margin-top:0;">This week at a glance</p>
+                <div class="stat-grid">
+                  <div class="stat-card"><div class="stat-num">฿12,450</div><div class="stat-label">Sales today</div></div>
+                  <div class="stat-card"><div class="stat-num">37</div><div class="stat-label">Orders this week</div></div>
+                  <div class="stat-card"><div class="stat-num">฿486</div><div class="stat-label">Avg order value</div></div>
+                  <div class="stat-card"><div class="stat-num">98.2%</div><div class="stat-label">Fulfillment rate</div></div>
+                </div>
+                <p class="section-label">Sales, last 7 days</p>
+                <div class="chart-card" style="padding:14px 10px 26px; margin-top:0; box-shadow:none;">
+                  <div class="bars" style="height:80px; gap:7px;">
+                    <div class="bar" style="height:44%;"><span class="bar-label">Wed</span></div>
+                    <div class="bar" style="height:58%;"><span class="bar-label">Thu</span></div>
+                    <div class="bar" style="height:37%;"><span class="bar-label">Fri</span></div>
+                    <div class="bar" style="height:70%;"><span class="bar-label">Sat</span></div>
+                    <div class="bar" style="height:64%;"><span class="bar-label">Sun</span></div>
+                    <div class="bar" style="height:49%;"><span class="bar-label">Mon</span></div>
+                    <div class="bar is-peak" style="height:100%;"><span class="bar-label">Tue</span></div>
+                  </div>
+                </div>
+                <p class="section-label">Top products this week</p>
+                <div class="tier-track">
+                  <div class="kv-row"><span>Stackable Bin 12L</span><b>24 sold</b></div>
+                  <div class="kv-row"><span>Dish Soap Refill 1L</span><b>19 sold</b></div>
+                  <div class="kv-row"><span>Bamboo Utensil Set</span><b>11 sold</b></div>
+                </div>
+                <p class="ma-side-note" style="padding-top:10px; max-width:none;">Scoped to your storefront only — this is your own sales, not a portfolio view. Portfolio-level analytics live in the Admin Control Center's Overview tab.</p>
+              </div>
+            </div>
+
+            <!-- CATALOG -->
+            <div class="ma-panel" data-panel="inventory">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <p class="section-label" style="margin:0;">Your storefront</p>
+                <button class="cat-add-btn" id="add-product-btn">+ Add product</button>
+              </div>
+              <div id="add-product-form" style="display:none; background:var(--base); border-radius:12px; padding:12px; margin:10px 0;">
+                <div class="wiz-field"><label>Product name</label><input type="text" id="new-prod-name" placeholder="e.g. Trash Bags 30pk"></div>
+                <div class="wiz-field"><label>Price (฿)</label><input type="number" id="new-prod-price" placeholder="129"></div>
+                <div class="wiz-field"><label>Starting stock</label><input type="number" id="new-prod-stock" placeholder="50"></div>
+                <button class="wiz-btn" id="add-product-save" style="margin-top:2px;">Add to storefront</button>
+              </div>
+              <input type="text" class="search-input" id="cat-search" placeholder="Search name or SKU" style="margin-top:10px;">
+              <div class="chip-row" id="cat-filter-chips"></div>
+              <div class="chip-row" id="cat-sort-chips" style="margin-top:6px;"></div>
+              <p class="table-summary" id="catalog-summary" style="margin:8px 0 0;"></p>
+              <div id="catalog-list" style="margin-top:8px;"></div>
+              <div class="pagination">
+                <button id="cat-prev">← Prev</button>
+                <span id="cat-pageinfo"></span>
+                <button id="cat-next">Next →</button>
+              </div>
+              <p class="ma-side-note" style="padding-top:10px; max-width:none;">"Synced via POS" updates automatically whenever a connected point-of-sale system changes stock — including sales outside Amaze. "Manual entry" merchants type counts in themselves — editing a product here always switches it to manual, since you just overrode whatever the POS last reported.</p>
+            </div>
+
+            <!-- PROFILE -->
+            <div class="ma-panel" data-panel="profile">
+              <p class="section-label" style="margin-top:0;">Order settings</p>
+              <div class="tier-track">
+                <div class="toggle-row">
+                  <div><div class="toggle-row-label">Auto-accept orders</div><div class="toggle-row-sub">Skip manual confirm if in stock</div></div>
+                  <button class="toggle-switch is-on" data-toggle></button>
+                </div>
+                <div class="toggle-row">
+                  <div><div class="toggle-row-label">Push notification on new order</div><div class="toggle-row-sub">Also available: SMS, email</div></div>
+                  <button class="toggle-switch is-on" data-toggle></button>
+                </div>
+                <div class="toggle-row">
+                  <div><div class="toggle-row-label">Default fulfillment warehouse</div><div class="toggle-row-sub">Used when stock exists in more than one</div></div>
+                  <button class="toggle-switch" data-toggle></button>
+                </div>
+              </div>
+              <p class="ma-side-note" style="padding-top:10px; max-width:none;">You don't manually connect each order to your store — a product you list carries your merchant ID, so any order for it routes to you automatically. These settings only control how you're notified and whether you must confirm by hand.</p>
+
+              <p class="section-label">Tier status</p>
+              <div class="tier-track">
+                <div class="kv-row"><span>Current tier</span><b>Gold</b></div>
+                <div class="bar-bg"><div class="bar-fill" style="width:82%;"></div></div>
+                <div style="font-size:11px; color:var(--ink-soft);">82% fulfillment streak toward next review — stay above 95% for 60 days to keep Gold</div>
+                <div class="kv-row" style="margin-top:10px;"><span>Commission rate</span><b>5%</b></div>
+                <div class="kv-row"><span>Auction win rate</span><b>34%</b></div>
+                <div class="kv-row"><span>Auction Integrity SLA</span><b style="color:var(--live);">Clean</b></div>
+              </div>
+              <p class="section-label">Payouts</p>
+              <div class="payout-current-card">
+                <div class="payout-current-label">Current balance · still accruing</div>
+                <div class="payout-current-amount" id="payout-current-amount">฿0</div>
+                <div class="payout-current-meta" id="payout-current-meta">—</div>
+                <div class="payout-pipeline">
+                  <div class="pp-step done"><div class="pp-dot">✓</div><div class="pp-label">Delivered</div></div>
+                  <div class="pp-step current"><div class="pp-dot">2</div><div class="pp-label">Holding<br>period</div></div>
+                  <div class="pp-step"><div class="pp-dot">3</div><div class="pp-label">Commission<br>deducted</div></div>
+                  <div class="pp-step"><div class="pp-dot">4</div><div class="pp-label">Paid out</div></div>
+                </div>
+                <div class="payout-current-sub" id="payout-current-sub">—</div>
+              </div>
+
+              <p class="section-label">Payout history <span style="font-weight:400; color:var(--muted);">(yours only)</span></p>
+              <p style="font-size:11px; color:var(--ink-soft); margin:0 0 8px; line-height:1.5;">Each row is one settlement — the net total of every order in that cycle, after commission and refunds. Tap a row to see which orders it included.</p>
+              <div id="payout-history-list"></div>
+              <p class="ma-side-note" style="padding-top:10px; max-width:none;">Only your own payout ledger appears here. The full mechanics — holding period, commission by tier, batch schedule — are in the Admin Control Center's Operations &amp; Finance tab; this is just your side of that same engine.</p>
+            </div>
+
+          </div>
+
+          <div class="ma-tabbar">
+            <button class="ma-tab is-active" data-tab="home">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+              Home
+            </button>
+            <button class="ma-tab" data-tab="auction">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              Auction
+            </button>
+            <button class="ma-tab" data-tab="orders">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>
+              Orders
+            </button>
+            <button class="ma-tab" data-tab="inventory">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
+              Catalog
+            </button>
+            <button class="ma-tab" data-tab="profile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+              Profile
+            </button>
+          </div>
+          </div>
+
+          <div id="onboarding-wizard" style="display:none; flex-direction:column; height:100%;">
+            <div style="padding:18px 18px 12px; border-bottom:1px solid var(--line);">
+              <div class="wiz-progress-label" id="wiz-step-label">Step 1 of 5 · Register</div>
+              <div class="wiz-progress-bar-bg"><div class="wiz-progress-bar-fill" id="wiz-progress-fill" style="width:20%;"></div></div>
+            </div>
+            <div style="flex:1; overflow-y:auto; padding:16px 18px 24px;">
+
+              <div class="wiz-step is-active" data-step="1">
+                <p class="section-label" style="margin-top:0;">Tell us about your business</p>
+                <div class="wiz-field"><label>Business name</label><input type="text" value="Baan Ruen Home Co."></div>
+                <div class="wiz-field"><label>Phone</label><input type="text" placeholder="08X-XXX-XXXX"></div>
+                <div class="wiz-field"><label>Email</label><input type="text" placeholder="owner@business.com"></div>
+                <div class="wiz-field">
+                  <label>Category</label>
+                  <div class="chip-row" style="margin-top:2px;">
+                    <span class="chip is-active">Home &amp; Kitchen</span><span class="chip">Apparel</span><span class="chip">Outdoor</span>
+                  </div>
+                </div>
+                <button class="wiz-btn" data-next>Continue →</button>
+              </div>
+
+              <div class="wiz-step" data-step="2">
+                <p class="section-label" style="margin-top:0;">Upload verification documents</p>
+                <div class="kyc-item">
+                  <div><div class="kyc-name">Business registration</div><div class="kyc-hint">PDF or photo, max 10MB</div></div>
+                  <button class="kyc-upload-btn" data-upload>Upload</button>
+                </div>
+                <div class="kyc-item">
+                  <div><div class="kyc-name">Owner ID card</div><div class="kyc-hint">PDF or photo, max 10MB</div></div>
+                  <button class="kyc-upload-btn" data-upload>Upload</button>
+                </div>
+                <div class="kyc-item">
+                  <div><div class="kyc-name">Bank statement</div><div class="kyc-hint">For payout verification</div></div>
+                  <button class="kyc-upload-btn" data-upload>Upload</button>
+                </div>
+                <button class="wiz-btn secondary" data-prev>← Back</button>
+                <button class="wiz-btn" data-next id="kyc-continue" disabled>Continue →</button>
+              </div>
+
+              <div class="wiz-step" data-step="3">
+                <div style="text-align:center; padding:16px 6px 6px;">
+                  <div style="width:52px; height:52px; border-radius:50%; background:var(--gold-soft); color:var(--gold); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-size:24px;">⏳</div>
+                  <div style="font-family:var(--font-display); font-weight:700; font-size:14px;">Application submitted</div>
+                  <div style="font-size:11.5px; color:var(--ink-soft); margin-top:6px; line-height:1.5;">Your documents are in the Admin review queue. Most applications are approved within 24–48 hours.</div>
+                </div>
+                <div class="tier-track" style="margin-top:14px;">
+                  <div class="kv-row"><span>Application ID</span><b>#APP-3391</b></div>
+                  <div class="kv-row"><span>Submitted</span><b>Just now</b></div>
+                  <div class="kv-row"><span>Status</span><b style="color:var(--gold);">Under review</b></div>
+                </div>
+                <p class="ma-side-note" style="padding-top:10px; max-width:none;">This is the same queue visible from the Admin side — see it in the Admin Control Center's Merchant Approvals tab.</p>
+                <button class="wiz-btn secondary" data-prev>← Back</button>
+                <button class="wiz-btn" data-next>Simulate approval →</button>
+              </div>
+
+              <div class="wiz-step" data-step="4">
+                <p class="section-label" style="margin-top:0;">Set up your store</p>
+                <div class="wiz-field"><label>Store display name</label><input type="text" value="Baan Ruen Home Co."></div>
+                <div class="wiz-field">
+                  <label>Store icon</label>
+                  <div class="chip-row" style="margin-top:2px;">
+                    <span class="chip is-active">🏠</span><span class="chip">🛍️</span><span class="chip">📦</span><span class="chip">🪴</span>
+                  </div>
+                </div>
+                <p class="section-label">Add your first product</p>
+                <div class="wiz-field"><label>Product name</label><input type="text" placeholder="e.g. Stackable Bin 12L"></div>
+                <div class="wiz-field"><label>Price (฿)</label><input type="number" placeholder="390"></div>
+                <button class="wiz-btn secondary" data-prev>← Back</button>
+                <button class="wiz-btn" data-next>Finish setup →</button>
+              </div>
+
+              <div class="wiz-step" data-step="5">
+                <p class="section-label" style="margin-top:0;">You're live on Amaze 🎉</p>
+                <div class="journey-map">
+                  <div class="jm-row">
+                    <div class="jm-box done">Register</div><div class="jm-arrow">→</div>
+                    <div class="jm-box done">KYC</div><div class="jm-arrow">→</div>
+                    <div class="jm-box done">Approval</div><div class="jm-arrow">→</div>
+                    <div class="jm-box done">Store setup</div><div class="jm-arrow">→</div>
+                    <div class="jm-box current">Dashboard</div>
+                  </div>
+                  <div class="jm-down">↓</div>
+                  <div class="jm-row">
+                    <div class="jm-box next">Orders</div><div class="jm-arrow">→</div>
+                    <div class="jm-box next">Inventory</div><div class="jm-arrow">→</div>
+                    <div class="jm-box next">Payout</div>
+                  </div>
+                </div>
+                <p class="ma-side-note" style="padding-top:12px; max-width:none;">This is the full onboarding-to-payout journey from the brief. Dashboard, Orders, Inventory, and Profile (Payout) are the four tabs you'll live in from here on.</p>
+                <button class="wiz-btn" id="enter-dashboard">Enter Dashboard →</button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+      </div>
+
+      <div class="ma-side-note">
+        <h3>Designed for scale, not one lucky auction</h3>
+        <p>With one merchant, "the auction" can just appear on screen. With a thousand merchants across many categories and zones, there are dozens of rounds running at once — so the Auction tab opens on a searchable, filterable list first. A merchant finds a round that matches their catalog, taps in, and only then sees the live bidding room below.</p>
+        <h3>Try it</h3>
+        <p>Search "Kids" or tap a category chip to filter the list. Tap a different round to switch the bidding room to it — the countdown and leaderboard update to match. Competing merchants keep bidding automatically on whichever round is open.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ADMIN CONTROL CENTER VIEW ================= -->
+  <div class="view" id="view-admin">
+    <div class="ac-layout">
+      <div class="ac-nav">
+        <div class="ac-nav-brand">Admin Control Center</div>
+        <span class="ac-nav-tag">Amaze internal team</span>
+        <button class="is-active" data-ac="overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>
+          Overview
+        </button>
+        <button data-ac="approvals">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+          Merchant Approvals
+        </button>
+        <button data-ac="auctions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          Live Auctions
+        </button>
+        <button data-ac="finance">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 8h18z"/><rect x="4" y="10" width="16" height="9" rx="1"/><path d="M8 10v9M12 10v9M16 10v9"/></svg>
+          Operations &amp; Finance
+        </button>
+        <button data-ac="lookup">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.5-4.5"/></svg>
+          Order Lookup
+        </button>
+        <button data-ac="exceptions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 20h20L12 2z"/><path d="M12 9v5M12 17h.01"/></svg>
+          SLA Exceptions
+        </button>
+        <button data-ac="disputes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21c-3-2-8-5.5-8-10a5 5 0 0 1 8-4 5 5 0 0 1 8 4c0 4.5-5 8-8 10z"/><path d="M9 12h6M12 9v6"/></svg>
+          Disputes
+        </button>
+        <button data-ac="fulfillment">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h11l4 4h3v-4l-3-5h-4"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg>
+          Fulfillment Monitor
+        </button>
+      </div>
+      <div class="ac-panels">
+
+        <div class="ac-panel is-active" data-acpanel="overview">
+          <p class="ac-panel-title">Merchant Success — First 90 Days</p>
+          <p class="ac-panel-sub">Portfolio-level KPIs aggregated across 1,214 active merchants — the right altitude for a steering committee, before drilling into any one list.</p>
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Time to First Sale</div>
+              <div class="kpi-num">2.4 days</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,6 12,9 24,8 36,15 48,16 60,21 70,20" fill="none" stroke="#00B894" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up">↓ 18% faster</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Order Fulfillment Rate</div>
+              <div class="kpi-num">98.6%</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,18 12,16 24,14 36,12 48,9 60,7 70,4" fill="none" stroke="#00B894" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up">↑ 1.2 pts</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Merchant Retention (90d)</div>
+              <div class="kpi-num">84%</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,17 12,15 24,16 36,11 48,10 60,6 70,5" fill="none" stroke="#00B894" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up">↑ 4 pts</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Tier Progression Rate</div>
+              <div class="kpi-num">31%</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,20 12,17 24,18 36,13 48,9 60,8 70,3" fill="none" stroke="#B9860C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up">reached Gold</div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <p class="chart-title">GMV by week — Merchant Suite</p>
+            <p class="chart-sub">Gross merchandise value processed across all merchants, last 6 weeks</p>
+            <div class="bars">
+              <div class="bar" style="height:38%;"><span class="bar-value">฿186k</span><span class="bar-label">Wk 1</span></div>
+              <div class="bar" style="height:46%;"><span class="bar-value">฿224k</span><span class="bar-label">Wk 2</span></div>
+              <div class="bar" style="height:52%;"><span class="bar-value">฿251k</span><span class="bar-label">Wk 3</span></div>
+              <div class="bar" style="height:61%;"><span class="bar-value">฿298k</span><span class="bar-label">Wk 4</span></div>
+              <div class="bar" style="height:74%;"><span class="bar-value">฿361k</span><span class="bar-label">Wk 5</span></div>
+              <div class="bar is-peak" style="height:100%;"><span class="bar-value">฿487k</span><span class="bar-label">Wk 6</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ac-panel" data-acpanel="approvals">
+          <p class="ac-panel-title">Merchant Approvals</p>
+          <p class="ac-panel-sub">New sign-ups awaiting KYC review. Sorted oldest-waiting first — the queue, not an alphabetical list.</p>
+          <p class="table-summary" id="approvals-summary"></p>
+          <div class="table-toolbar">
+            <input type="text" class="search-input" id="approvals-search" placeholder="Search name or category">
+          </div>
+          <div class="bulk-bar" id="approvals-bulk-bar">
+            <span class="bulk-count">0 selected</span>
+            <button id="approvals-bulk-approve">Approve selected</button>
+          </div>
+          <table>
+            <thead><tr><th style="width:24px;"></th><th>Business</th><th>Category</th><th>KYC</th><th>Waiting</th><th></th></tr></thead>
+            <tbody id="approvals-body"></tbody>
+          </table>
+          <div class="pagination">
+            <button id="approvals-prev">← Prev</button>
+            <span id="approvals-pageinfo"></span>
+            <button id="approvals-next">Next →</button>
+          </div>
+        </div>
+
+        <div class="ac-panel" data-acpanel="auctions">
+          <p class="ac-panel-title">Live Auctions</p>
+          <p class="ac-panel-sub" id="auctions-summary">Rounds currently open across zones.</p>
+          <div class="table-toolbar">
+            <input type="text" class="search-input" id="ac-auctions-search" placeholder="Search category or zone">
+          </div>
+          <div class="filter-row">
+            <select class="filter-select" id="ac-auctions-cat-select"></select>
+            <select class="filter-select" id="ac-auctions-zone-select"></select>
+          </div>
+          <table>
+            <thead><tr><th>Category / Zone</th><th>Waiting shoppers</th><th>Bidders</th><th>Leading bid</th><th>Time left</th></tr></thead>
+            <tbody id="ac-auctions-body"></tbody>
+          </table>
+          <div class="pagination">
+            <button id="ac-auctions-prev">← Prev</button>
+            <span id="ac-auctions-pageinfo"></span>
+            <button id="ac-auctions-next">Next →</button>
+          </div>
+        </div>
+
+        <div class="ac-panel" data-acpanel="finance">
+          <p class="ac-panel-title">Operations &amp; Finance</p>
+          <p class="ac-panel-sub">How a delivered order becomes cash in a merchant's bank account, fully automated. For the three-way SLA between Merchant, Logistics Partner, and Amaze Finance, see the SLA Exceptions tab.</p>
+
+          <p class="section-title" style="margin-top:6px;">Finance dashboard</p>
+          <p class="section-sub">This batch, at a glance — computed from the same data as the table below, so the two never disagree.</p>
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Paid out</div>
+              <div class="kpi-num" id="fd-paid-amount">—</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,18 12,16 24,14 36,11 48,9 60,6 70,4" fill="none" stroke="#00B894" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up" id="fd-paid-count">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Outstanding · still in pipeline</div>
+              <div class="kpi-num" id="fd-outstanding-amount">—</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,10 12,12 24,11 36,14 48,13 60,15 70,14" fill="none" stroke="#B9860C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up" id="fd-outstanding-count" style="color:var(--gold);">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Platform commission collected</div>
+              <div class="kpi-num" id="fd-commission-amount">—</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,17 12,15 24,16 36,12 48,10 60,7 70,5" fill="none" stroke="#00B894" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up" id="fd-commission-rate">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Held for review · value at risk</div>
+              <div class="kpi-num" id="fd-held-amount">—</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,8 12,10 24,9 36,13 48,14 60,17 70,19" fill="none" stroke="#FF5252" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up" id="fd-held-count" style="color:var(--urgency);">—</div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <p class="chart-title">Value by segment — Gold vs Standard tier</p>
+            <p class="chart-sub">Paid vs still-outstanding value, split by merchant tier</p>
+            <table>
+              <thead><tr><th>Tier</th><th>Merchants</th><th>Paid out</th><th>Outstanding</th><th>Avg. commission</th></tr></thead>
+              <tbody id="fd-segment-body"></tbody>
+            </table>
+          </div>
+
+          <div class="chart-card">
+            <p class="chart-title">Value sitting in each stage</p>
+            <p class="chart-sub">Not just how many merchants — how much money is where right now</p>
+            <div class="bars" id="fd-stage-bars"></div>
+          </div>
+
+          <p class="section-title">Automated seller payout — how a sale becomes cash in the bank</p>
+          <p class="section-sub">Every completed order flows through the same engine, no manual transfers — tap a stage to see who's in it.</p>
+          <div class="payout-flow" id="payout-flow-steps">
+            <div class="flow-step" data-stage="delivered">
+              <div class="flow-step-num">01</div>
+              <div class="flow-step-title">Order delivered</div>
+              <div class="flow-step-sub">Buyer confirms receipt or auto-confirm after 7 days · <span id="flow-step1-count">—</span> merchants here now</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step" data-stage="holding">
+              <div class="flow-step-num">02</div>
+              <div class="flow-step-title">Hold period</div>
+              <div class="flow-step-sub">48-hr dispute window for buyer protection · <span id="flow-step2-count">—</span> merchants here now</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step" data-stage="commission">
+              <div class="flow-step-num">03</div>
+              <div class="flow-step-title">Commission deducted</div>
+              <div class="flow-step-sub">Tier-based: Gold 5%, Standard 8% · blended avg <span id="flow-step3-rate">—</span></div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step" data-stage="paid">
+              <div class="flow-step-num">04</div>
+              <div class="flow-step-title">Batched payout</div>
+              <div class="flow-step-sub">Mon &amp; Thu cycle · <span id="flow-step4-amount">—</span> to <span id="flow-step4-count">—</span> merchants</div>
+            </div>
+          </div>
+          <p class="ma-side-note" style="max-width:none; padding-top:2px;">A payout can be flagged <b>held for review</b> at any of these four stages — that's a separate flag from which stage it's in, not a fifth stage. The table below tracks both.</p>
+
+          <div id="po-list-view">
+            <p class="section-title">This week's payout batch</p>
+            <p class="section-sub" id="po-summary"></p>
+            <div class="table-toolbar">
+              <input type="text" class="search-input" id="po-search" placeholder="Search merchant name">
+            </div>
+            <div class="chip-row" id="po-chips"></div>
+            <div class="chip-row" id="po-review-chips" style="margin-top:6px;"></div>
+            <table>
+              <thead><tr><th>Merchant</th><th>Gross sales</th><th>Commission</th><th>Refunds</th><th>Net payout</th><th>Stage</th><th></th></tr></thead>
+              <tbody id="po-body"></tbody>
+            </table>
+            <div class="pagination">
+              <button id="po-prev">← Prev</button>
+              <span id="po-pageinfo"></span>
+              <button id="po-next">Next →</button>
+            </div>
+          </div>
+          <div id="po-detail-view" style="display:none;">
+            <button class="link-back" id="po-detail-back" style="margin-top:0;">← Back to payout batch</button>
+            <div id="po-detail-content"></div>
+          </div>
+
+          <p class="ma-side-note" style="max-width:none; padding-top:14px;">Auction slot fees from the Demand-Triggered Auction settle same-day, separately from this cycle — they're a placement fee, not product sale proceeds, so they don't need a returns holding period.</p>
+        </div>
+
+        <div class="ac-panel" data-acpanel="lookup">
+          <p class="ac-panel-title">Order Lookup</p>
+          <p class="ac-panel-sub">Pull up any order's full cross-merchant timeline — for support and dispute resolution. Merchants themselves only see their own branch (Merchant App → Orders tab); this full view lives here and in the shopper-facing app.</p>
+          <div class="table-toolbar">
+            <input type="text" class="search-input" id="lookup-search" placeholder="Search Order ID or shopper name" style="max-width:320px;">
+          </div>
+          <p class="table-summary" id="lookup-summary"></p>
+          <div class="order-lookup-list" id="lookup-list"></div>
+
+          <p class="section-title">Full timeline</p>
+          <div id="lookup-detail"></div>
+        </div>
+
+        <div class="ac-panel" data-acpanel="exceptions">
+          <p class="ac-panel-title">SLA Exceptions</p>
+          <p class="ac-panel-sub">The current state of all three parties, and every order currently breaching an SLA leg beneath it — one page for the whole SLA picture.</p>
+
+          <p class="section-title" style="margin-top:4px;">Three-way SLA</p>
+          <p class="section-sub">Each party's obligation, whether this week's performance meets it, and the 6-week trend — so a slow slide gets caught before it becomes a breach.</p>
+          <div class="sla-grid">
+            <div class="sla-card">
+              <div class="sla-card-head">
+                <div class="sla-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M7 7V5a4 4 0 0 1 8 0v2"/></svg></div>
+                <div class="sla-card-title">Merchant</div>
+              </div>
+              <div class="sla-item"><span>Confirm order within 24h</span><span class="sla-status met">Met</span></div>
+              <div class="sla-item"><span>Hand off to courier within 48h</span><span class="sla-status met">Met</span></div>
+              <div class="sla-item"><span>Fulfillment rate ≥ 95%</span><span class="sla-status breach">Breach</span></div>
+              <div class="sla-trend">
+                <span class="sla-trend-label">6-week trend</span>
+                <svg class="kpi-spark" viewBox="0 0 70 24" width="60" height="20"><polyline points="0,10 12,8 24,11 36,14 48,17 60,19 70,20" fill="none" stroke="#FF5252" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="sla-card">
+              <div class="sla-card-head">
+                <div class="sla-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h11l4 4h3v-4l-3-5h-4"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg></div>
+                <div class="sla-card-title">Logistics Partner</div>
+              </div>
+              <div class="sla-item"><span>Pickup within 24h of ready</span><span class="sla-status met">Met</span></div>
+              <div class="sla-item"><span>Deliver within zone target</span><span class="sla-status met">Met</span></div>
+              <div class="sla-item"><span>Damage / loss rate &lt; 1%</span><span class="sla-status met">Met</span></div>
+              <div class="sla-trend">
+                <span class="sla-trend-label">6-week trend</span>
+                <svg class="kpi-spark" viewBox="0 0 70 24" width="60" height="20"><polyline points="0,18 12,15 24,13 36,10 48,8 60,6 70,4" fill="none" stroke="#00B894" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+            <div class="sla-card">
+              <div class="sla-card-head">
+                <div class="sla-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 12h8M8 16h5M8 8h5"/></svg></div>
+                <div class="sla-card-title">Amaze Finance</div>
+              </div>
+              <div class="sla-item"><span>Payout released on cycle</span><span class="sla-status met">Met</span></div>
+              <div class="sla-item"><span>Dispute resolved within 5 days</span><span class="sla-status met">Met</span></div>
+              <div class="sla-item"><span>Ledger reconciliation accuracy</span><span class="sla-status met">Met</span></div>
+              <div class="sla-trend">
+                <span class="sla-trend-label">6-week trend</span>
+                <svg class="kpi-spark" viewBox="0 0 70 24" width="60" height="20"><polyline points="0,16 12,14 24,15 36,11 48,9 60,7 70,5" fill="none" stroke="#00B894" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <p class="section-title">Orders currently breaching</p>
+          <p class="table-summary" id="exceptions-summary"></p>
+          <div class="table-toolbar">
+            <input type="text" class="search-input" id="exceptions-search" placeholder="Search Order ID">
+          </div>
+          <div class="chip-row" id="exceptions-chips"></div>
+          <table>
+            <thead><tr><th>Order</th><th>Responsible party</th><th>Stage</th><th>Target</th><th>Elapsed</th><th>Delay</th><th></th></tr></thead>
+            <tbody id="exceptions-body"></tbody>
+          </table>
+          <div class="pagination">
+            <button id="exceptions-prev">← Prev</button>
+            <span id="exceptions-pageinfo"></span>
+            <button id="exceptions-next">Next →</button>
+          </div>
+        </div>
+
+        <div class="ac-panel" data-acpanel="disputes">
+          <div id="disputes-list-view">
+            <p class="ac-panel-title">Disputes</p>
+            <p class="ac-panel-sub">Escalations that need a human decision — a shopper or merchant flagged a problem that automated rules can't resolve on their own.</p>
+            <p class="table-summary" id="disputes-summary"></p>
+            <div class="table-toolbar">
+              <input type="text" class="search-input" id="disputes-search" placeholder="Search Order ID">
+            </div>
+            <div class="chip-row" id="disputes-chips"></div>
+            <table>
+              <thead><tr><th>Order</th><th>Type</th><th>Filed by</th><th>Age</th><th>Status</th><th></th></tr></thead>
+              <tbody id="disputes-body"></tbody>
+            </table>
+            <div class="pagination">
+              <button id="disputes-prev">← Prev</button>
+              <span id="disputes-pageinfo"></span>
+              <button id="disputes-next">Next →</button>
+            </div>
+          </div>
+          <div id="disputes-detail-view" style="display:none;">
+            <button class="link-back" id="disputes-back" style="margin-top:0;">← Back to Disputes</button>
+            <div id="disputes-detail-content"></div>
+          </div>
+        </div>
+
+        <div class="ac-panel" data-acpanel="fulfillment">
+          <p class="ac-panel-title">Fulfillment Monitor</p>
+          <p class="ac-panel-sub">Auction Integrity SLA: a fulfillment failure during a featured slot drops tier immediately. Default view shows only merchants below threshold — management by exception, not a 1,200-row scroll.</p>
+
+          <p class="section-title" style="margin-top:20px;">All merchants</p>
+          <p class="table-summary" id="fm-summary"></p>
+          <div class="table-toolbar">
+            <input type="text" class="search-input" id="fm-search" placeholder="Search merchant name">
+          </div>
+          <div class="chip-row" id="fm-chips"></div>
+          <table>
+            <thead><tr><th>Merchant</th><th>Fulfillment rate</th><th>Tier</th><th></th></tr></thead>
+            <tbody id="fm-body"></tbody>
+          </table>
+          <div class="pagination">
+            <button id="fm-prev">← Prev</button>
+            <span id="fm-pageinfo"></span>
+            <button id="fm-next">Next →</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  /* ============ seeded RNG so the demo is reproducible on every reload ============ */
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  var rand = mulberry32(1337);
+  function pick(arr){ return arr[Math.floor(rand()*arr.length)]; }
+  function randInt(min,max){ return Math.floor(min+rand()*(max-min+1)); }
+
+  var namePrefixes=['Baan','Zone3','Lanna','Isaan','Phuket','Chiang','Siam','Sathorn','Riverside','Golden','Sukhumvit','Ari','Thonglor','Bangrak','Ekamai','Silom','Ratchada','Onnut','Pinklao','Ladprao','Rama','Charoen'];
+  var nameTypes=['Home','Kitchen','Textiles','Coastal','Traders','Supply','Goods','Living','Crafts','Market','Outdoor','Kids','Beauty','Grocery','Hardware','Wellness'];
+  var nameSuffixes=['Co.','Shop','Trading','Store','House','Studio'];
+  function genName(){ return pick(namePrefixes)+' '+pick(nameTypes)+' '+pick(nameSuffixes); }
+
+  var categories=['Home & Kitchen','Apparel','Outdoor & Camping','Kids & Baby','Beauty & Personal Care','Electronics Accessories','Grocery & Pantry'];
+  var zones=['Zone 1 · Sukhumvit','Zone 2 · Silom','Zone 3 · Ladprao','Zone 4 · Thonglor','Zone 5 · Ari','Zone 6 · Bang Na'];
+
+  function formatTime(s){
+    if(s<=0) return '00:00';
+    var m=Math.floor(s/60), sec=s%60;
+    return (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
+  }
+  function paginate(data, page, perPage){ var start=(page-1)*perPage; return data.slice(start, start+perPage); }
+
+  /* ---------- top-level view switch ---------- */
+  var btnMerchant=document.getElementById('btn-merchant');
+  var btnAdmin=document.getElementById('btn-admin');
+  var viewMerchant=document.getElementById('view-merchant');
+  var viewAdmin=document.getElementById('view-admin');
+  btnMerchant.addEventListener('click', function(){
+    btnMerchant.classList.add('is-active'); btnAdmin.classList.remove('is-active');
+    viewMerchant.classList.add('is-active'); viewAdmin.classList.remove('is-active');
+  });
+  btnAdmin.addEventListener('click', function(){
+    btnAdmin.classList.add('is-active'); btnMerchant.classList.remove('is-active');
+    viewAdmin.classList.add('is-active'); viewMerchant.classList.remove('is-active');
+  });
+
+  /* ---------- merchant app bottom tabs ---------- */
+  var tabs=document.querySelectorAll('.ma-tab');
+  var panels=document.querySelectorAll('.ma-panel');
+  function showPanel(name){
+    tabs.forEach(function(t){ t.classList.toggle('is-active', t.dataset.tab===name); });
+    panels.forEach(function(p){ p.classList.toggle('is-active', p.dataset.panel===name); });
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ showPanel(t.dataset.tab); }); });
+  document.querySelectorAll('[data-goto]').forEach(function(el){
+    el.addEventListener('click', function(){ showPanel(el.dataset.goto); });
+  });
+
+  /* ---------- admin sidebar ---------- */
+  var acButtons=document.querySelectorAll('.ac-nav button');
+  var acPanels=document.querySelectorAll('.ac-panel');
+  acButtons.forEach(function(b){
+    b.addEventListener('click', function(){
+      acButtons.forEach(function(x){ x.classList.remove('is-active'); });
+      b.classList.add('is-active');
+      acPanels.forEach(function(p){ p.classList.toggle('is-active', p.dataset.acpanel===b.dataset.ac); });
+    });
+  });
+
+  /* ============ AUCTION ROUNDS — shared by Merchant App list + Admin Live Auctions ============ */
+  var categoryProductPools={
+    'Home & Kitchen': {adj:['Stackable','Ceramic','Bamboo','Insulated','Non-stick','Reusable','Wooden','Foldable','Electric'], noun:['Bin 12L','Coffee Dripper','Utensil Set','Spice Rack','Storage Jar','Cutting Board','Dish Rack','Trash Bag Roll','Soap Refill 1L','Laundry Basket','Kettle']},
+    'Outdoor & Camping': {adj:['Waterproof','Lightweight','Portable','Insulated','Foldable','Compact'], noun:['Camping Tent','Hiking Backpack','Water Bottle','Sleeping Bag','Folding Chair','Headlamp','Cooler Box']},
+    'Electronics Accessories': {adj:['Wireless','Fast-charging','Compact','Portable','USB-C'], noun:['Charging Cable','Earbuds','Phone Stand','Power Bank','Bluetooth Speaker']},
+    'Beauty & Personal Care': {adj:['Organic','Gentle','Reusable','Travel-size','Herbal'], noun:['Facial Serum','Toothbrush','Hair Dryer','Body Lotion','Lip Balm']}
+  };
+  var categoryGroups=Object.keys(categoryProductPools);
+  function genProductForCategory(cat){
+    var pool=categoryProductPools[cat]||categoryProductPools['Home & Kitchen'];
+    return pick(pool.adj)+' '+pick(pool.noun);
+  }
+  function genProductName(){ return genProductForCategory(pick(categoryGroups)); }
+
+  /* Demand is citywide per product — no longer split into a separate auction per zone.
+     zoneBreakdown just shows WHERE that demand sits; merchants self-select how much they
+     can fulfill, which naturally filters by zone without a hard pre-split. */
+  function genZoneBreakdown(totalDemand){
+    var shuffled=zones.slice().sort(function(){return rand()-0.5;});
+    var count=randInt(2,4);
+    var chosen=shuffled.slice(0,count);
+    var remaining=totalDemand;
+    var out=[];
+    chosen.forEach(function(z,idx){
+      var isLast=idx===chosen.length-1;
+      var amt=isLast ? remaining : Math.max(1, Math.round(remaining*(0.3+rand()*0.4)));
+      amt=Math.min(amt, remaining-(chosen.length-1-idx));
+      out.push({zone:z, count:amt});
+      remaining-=amt;
+    });
+    return out;
+  }
+  function zoneSummary(r){
+    var zb=r.zoneBreakdown.slice().sort(function(a,b){return b.count-a.count;});
+    if(zb.length===1) return zb[0].zone;
+    return zb[0].zone+' +'+(zb.length-1)+' more';
+  }
+
+  var auctionRounds=[];
+  auctionRounds.push({
+    id:0, category:'Stackable Storage Bins', categoryGroup:'Home & Kitchen', demand:42,
+    zoneBreakdown:[{zone:'Zone 3 · Ladprao', count:22},{zone:'Zone 1 · Sukhumvit', count:13},{zone:'Zone 6 · Bang Na', count:7}],
+    secondsLeft:600, minBidSeen:180, closed:false, fills:[],
+    bids:[
+      {name:'Zone3 Traders', bid:210, fulfillment:91, rating:4.6, isYou:false},
+      {name:'Kitchen Plus Co.', bid:195, fulfillment:97, rating:4.9, isYou:false},
+      {name:'MJ Home Supply', bid:180, fulfillment:74, rating:4.1, isYou:false}
+    ]
+  });
+  for(var i=1;i<20;i++){
+    var seedCount=randInt(2,6), bidsArr=[], minB=99999;
+    for(var j=0;j<seedCount;j++){
+      var b=randInt(120,340);
+      if(b<minB) minB=b;
+      bidsArr.push({name:genName(), bid:b, fulfillment:randInt(60,99), rating:+(3.6+rand()*1.4).toFixed(1), isYou:false});
+    }
+    var d=randInt(9,58);
+    var cg=pick(categoryGroups);
+    auctionRounds.push({
+      id:i, category:genProductForCategory(cg), categoryGroup:cg, demand:d, zoneBreakdown:genZoneBreakdown(d),
+      secondsLeft:randInt(45,900), minBidSeen:Math.min(minB,120), closed:false, bids:bidsArr, fills:[]
+    });
+  }
+  /* Reverse auction: shoppers already committed to buy, merchants compete on price to win
+     the guaranteed volume. Lower bid = better score — the opposite of a traditional auction. */
+  function scoreOf(round,b){ return (round.minBidSeen/b.bid)*50 + (b.fulfillment/100)*30 + (b.rating/5)*20; }
+  var PRICE_SETTER_MIN_PCT=0.4;
+  var BACKFILL_MIN_PCT=0.2;
+  /* Uniform-price resolution: top-scored bid sets the clearing price for the whole round.
+     The price-setter must commit at least PRICE_SETTER_MIN_PCT of total demand — they can't
+     set an aggressive price then dump most of the volume on everyone else. Backfillers who
+     accept that same price fill the rest, each taking at least BACKFILL_MIN_PCT of what's
+     left, until every unit is covered. */
+  function resolveFills(r){
+    var ranked=r.bids.slice().sort(function(a,b){return scoreOf(r,b)-scoreOf(r,a);});
+    var clearingPrice=ranked.length ? ranked[0].bid : 0;
+    var remaining=r.demand;
+    var fills=[];
+    var priceSetterMinQty=Math.max(1, Math.round(r.demand*PRICE_SETTER_MIN_PCT));
+    var backfillMinQty=Math.max(1, Math.round(r.demand*BACKFILL_MIN_PCT));
+    for(var k=0;k<ranked.length && remaining>0;k++){
+      var bidder=ranked[k];
+      var isLast=(k===ranked.length-1);
+      var isPriceSetter=(k===0);
+      var floorQty=isPriceSetter?priceSetterMinQty:backfillMinQty;
+      var qty;
+      if(isLast || remaining<=floorQty){
+        qty=remaining;
+      } else {
+        var portion=isPriceSetter?(0.45+rand()*0.35):(0.35+rand()*0.4);
+        qty=Math.max(floorQty, Math.round(remaining*portion));
+        qty=Math.min(qty, remaining);
+      }
+      fills.push({name:bidder.isYou?'You':bidder.name, isYou:bidder.isYou, qty:qty, price:clearingPrice});
+      remaining-=qty;
+    }
+    r.fills=fills;
+    r.clearingPrice=clearingPrice;
+  }
+  function leadBid(round){ var s=round.bids.slice().sort(function(a,b){return scoreOf(round,b)-scoreOf(round,a);}); return s.length?s[0].bid:0; }
+  function roundById(id){ return auctionRounds.filter(function(r){return r.id===id;})[0]; }
+
+  var activeAuctionId=0;
+  var activeCatFilter='All';
+  var activeZoneFilter='All';
+  var auctionListEl=document.getElementById('auction-list');
+  var auctionSearchEl=document.getElementById('auction-search');
+  var auctionCatSelectEl=document.getElementById('auction-cat-select');
+  var auctionZoneSelectEl=document.getElementById('auction-zone-select');
+
+  function populateFilterSelect(el, opts, allLabel){
+    el.innerHTML='';
+    var allOpt=document.createElement('option');
+    allOpt.value='All'; allOpt.textContent=allLabel;
+    el.appendChild(allOpt);
+    opts.forEach(function(o){
+      var opt=document.createElement('option');
+      opt.value=o; opt.textContent=o;
+      el.appendChild(opt);
+    });
+  }
+  populateFilterSelect(auctionCatSelectEl, categoryGroups, 'All categories');
+  populateFilterSelect(auctionZoneSelectEl, zones, 'All zones');
+  auctionCatSelectEl.addEventListener('change', function(){ activeCatFilter=auctionCatSelectEl.value; renderAuctionList(); });
+  auctionZoneSelectEl.addEventListener('change', function(){ activeZoneFilter=auctionZoneSelectEl.value; renderAuctionList(); });
+
+  function renderAuctionList(){
+    var q=(auctionSearchEl.value||'').toLowerCase();
+    var filtered=auctionRounds.filter(function(r){
+      var mq=!q || r.category.toLowerCase().indexOf(q)>-1 || zoneSummary(r).toLowerCase().indexOf(q)>-1;
+      var mCat=activeCatFilter==='All' || r.categoryGroup===activeCatFilter;
+      var mZone=activeZoneFilter==='All' || r.zoneBreakdown.some(function(z){return z.zone===activeZoneFilter;});
+      return mq && mCat && mZone;
+    }).sort(function(a,b){ return a.secondsLeft-b.secondsLeft; });
+
+    auctionListEl.innerHTML='';
+    filtered.forEach(function(r){
+      var item=document.createElement('div');
+      item.className='auction-list-item'+(r.id===activeAuctionId?' is-active':'')+(r.closed?' is-closed':'');
+      item.innerHTML=
+        '<div class="ali-top"><span class="ali-cat">'+r.category+'</span><span class="ali-timer">'+(r.closed?'Closed':formatTime(r.secondsLeft))+'</span></div>'+
+        '<div class="ali-zone">'+zoneSummary(r)+'</div>'+
+        '<div class="ali-meta"><span>🔥 '+r.demand+' waiting</span><span>'+r.bids.length+' bidders</span><span>Lead ฿'+leadBid(r)+'</span></div>';
+      if(!r.closed){
+        item.addEventListener('click', function(id){ return function(){ activeAuctionId=id; renderAuctionList(); renderDetail(); }; }(r.id));
+      }
+      auctionListEl.appendChild(item);
+    });
+    document.getElementById('auction-list-summary').textContent = filtered.length+' of '+auctionRounds.length+' live rounds';
+  }
+  function renderBidList(r){
+    var listEl=document.getElementById('bid-list');
+    var sorted=r.bids.slice().sort(function(a,b){return scoreOf(r,b)-scoreOf(r,a);});
+    listEl.innerHTML='';
+    sorted.forEach(function(b,idx){
+      var row=document.createElement('div');
+      row.className='bid-row'+(b.isYou?' is-you':'');
+      row.innerHTML=
+        '<span class="rank-badge">'+(idx+1)+'</span>'+
+        '<span><span class="bid-name">'+(b.isYou?'You':b.name)+'</span><br><span class="bid-meta">Fulfillment '+b.fulfillment+'% · '+b.rating.toFixed(1)+'★</span></span>'+
+        '<span><span class="bid-amount">฿'+b.bid+'</span><br><span class="bid-score">score '+scoreOf(r,b).toFixed(0)+'</span></span>';
+      listEl.appendChild(row);
+    });
+  }
+  function renderDetail(){
+    var r=roundById(activeAuctionId);
+    var formWrap=document.getElementById('bid-form-wrap');
+    var closedWrap=document.getElementById('round-closed-wrap');
+    if(!r){
+      document.getElementById('detail-cat').textContent='No round selected';
+      document.getElementById('detail-zone').textContent='Pick a live round above';
+      document.getElementById('detail-demand').textContent='';
+      document.getElementById('bid-list').innerHTML='';
+      formWrap.style.display='none'; closedWrap.style.display='none';
+      return;
+    }
+    document.getElementById('detail-cat').textContent=r.category;
+    document.getElementById('detail-zone').textContent='Demand across '+r.zoneBreakdown.length+' zones · '+zoneSummary(r);
+    document.getElementById('detail-demand').textContent='🔥 '+r.demand+' verified shoppers are waiting on this item';
+    document.getElementById('timer-display').textContent=formatTime(r.secondsLeft);
+    renderBidList(r);
+    if(r.closed){
+      formWrap.style.display='none';
+      closedWrap.style.display='block';
+      if(!r.fills || !r.fills.length) resolveFills(r);
+      var setter=r.fills.length ? r.fills[0] : null;
+      var rowsHtml=r.fills.map(function(f,idx){
+        var pct=Math.round(f.qty/r.demand*100);
+        return '<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:11.5px;'+(idx>0?' border-top:1px solid rgba(255,255,255,.15);':'')+'">'+
+          '<span>'+(idx+1)+'. '+f.name+(idx===0?' <span style="opacity:.7;">(sets price)</span>':'')+'</span>'+
+          '<span>'+f.qty+' units ('+pct+'%)</span>'+
+        '</div>';
+      }).join('');
+      closedWrap.innerHTML=
+        '<div class="round-closed">'+
+          'Round closed. Clearing price <b>฿'+(setter?setter.price:0)+'</b>, set by <b>'+(setter?setter.name:'—')+'</b>.'+
+          '<div style="margin-top:8px;">'+rowsHtml+'</div>'+
+          '<div style="margin-top:8px; opacity:.8; font-size:10.5px;">All '+r.demand+' units covered at the same clearing price — every contributor earns Tier progress. The price-setter must always take at least '+Math.round(PRICE_SETTER_MIN_PCT*100)+'% of the batch, so they can\'t set a low price and walk away with none of the risk.</div>'+
+        '</div>';
+    } else {
+      formWrap.style.display='block';
+      closedWrap.style.display='none';
+    }
+  }
+  document.getElementById('bid-submit').addEventListener('click', function(){
+    var r=roundById(activeAuctionId);
+    if(!r || r.closed) return;
+    var val=parseFloat(document.getElementById('bid-input').value);
+    if(!val || val<=0) return;
+    r.minBidSeen=Math.min(r.minBidSeen,val);
+    var mine=r.bids.filter(function(b){return b.isYou;})[0];
+    if(mine){ mine.bid=val; } else { r.bids.push({name:'You', bid:val, fulfillment:96, rating:4.8, isYou:true}); }
+    renderBidList(r);
+    document.getElementById('bid-input').value='';
+    renderAuctionList();
+  });
+  document.getElementById('back-to-list').addEventListener('click', function(){
+    auctionListEl.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+  auctionSearchEl.addEventListener('input', renderAuctionList);
+
+  /* global tick: every round's countdown, every second */
+  setInterval(function(){
+    auctionRounds.forEach(function(r){
+      if(!r.closed){
+        r.secondsLeft--;
+        if(r.secondsLeft<=0){ r.secondsLeft=0; r.closed=true; resolveFills(r); }
+      }
+    });
+    renderAuctionList();
+    renderAdminAuctions();
+    var r=roundById(activeAuctionId);
+    if(r){
+      document.getElementById('timer-display').textContent=formatTime(r.secondsLeft);
+      if(r.closed) renderDetail();
+    }
+  },1000);
+
+  /* competitor bids: only on the currently open round, every 4s */
+  setInterval(function(){
+    var r=roundById(activeAuctionId);
+    if(!r || r.closed) return;
+    var sorted=r.bids.slice().sort(function(a,b){return scoreOf(r,b)-scoreOf(r,a);});
+    var top=sorted.length?sorted[0].bid:150;
+    var newBid=Math.max(60, top-randInt(5,30));
+    r.minBidSeen=Math.min(r.minBidSeen,newBid);
+    r.bids.push({name:genName(), bid:newBid, fulfillment:randInt(65,99), rating:+(3.8+rand()*1.2).toFixed(1), isYou:false});
+    if(r.bids.length>7){ r.bids.sort(function(a,b){return scoreOf(r,b)-scoreOf(r,a);}); r.bids=r.bids.slice(0,7); }
+    renderBidList(r);
+    renderAuctionList();
+  },4000);
+
+  renderAuctionList();
+  renderDetail();
+
+  /* ============ Onboarding mode switch + wizard ============ */
+  var modeOnboardingBtn=document.getElementById('mode-onboarding');
+  var modeLiveBtn=document.getElementById('mode-live');
+  var liveChrome=document.getElementById('live-app-chrome');
+  var wizard=document.getElementById('onboarding-wizard');
+  function setMode(mode){
+    if(mode==='onboarding'){
+      modeOnboardingBtn.classList.add('is-active'); modeLiveBtn.classList.remove('is-active');
+      liveChrome.style.display='none'; wizard.style.display='flex';
+    } else {
+      modeLiveBtn.classList.add('is-active'); modeOnboardingBtn.classList.remove('is-active');
+      wizard.style.display='none'; liveChrome.style.display='flex';
+    }
+  }
+  modeOnboardingBtn.addEventListener('click', function(){ setMode('onboarding'); });
+  modeLiveBtn.addEventListener('click', function(){ setMode('live'); });
+
+  var wizSteps=document.querySelectorAll('.wiz-step');
+  var wizLabels=['Register','Verify (KYC)','Pending Approval','Store Setup','Go Live'];
+  var TOTAL_WIZ_STEPS=5;
+  var currentWizStep=1;
+  function showWizStep(n){
+    currentWizStep=n;
+    wizSteps.forEach(function(s){ s.classList.toggle('is-active', parseInt(s.dataset.step,10)===n); });
+    document.getElementById('wiz-step-label').textContent='Step '+n+' of '+TOTAL_WIZ_STEPS+' · '+wizLabels[n-1];
+    document.getElementById('wiz-progress-fill').style.width=(n/TOTAL_WIZ_STEPS*100)+'%';
+  }
+  document.querySelectorAll('[data-next]').forEach(function(btn){
+    btn.addEventListener('click', function(){ if(!btn.disabled && currentWizStep<TOTAL_WIZ_STEPS) showWizStep(currentWizStep+1); });
+  });
+  document.querySelectorAll('[data-prev]').forEach(function(btn){
+    btn.addEventListener('click', function(){ if(currentWizStep>1) showWizStep(currentWizStep-1); });
+  });
+  showWizStep(1);
+
+  var kycButtons=document.querySelectorAll('[data-upload]');
+  var kycContinueBtn=document.getElementById('kyc-continue');
+  kycButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      btn.textContent='✓ Uploaded';
+      btn.classList.add('done');
+      btn.disabled=true;
+      var allDone=Array.prototype.every.call(kycButtons, function(b){ return b.classList.contains('done'); });
+      if(allDone) kycContinueBtn.disabled=false;
+    });
+  });
+
+  document.getElementById('enter-dashboard').addEventListener('click', function(){
+    setMode('live');
+    showPanel('home');
+    showWizStep(1);
+    kycButtons.forEach(function(b){ b.textContent='Upload'; b.classList.remove('done'); b.disabled=false; });
+    kycContinueBtn.disabled=true;
+  });
+
+  /* ============ Inventory: restock interaction ============ */
+  document.querySelectorAll('[data-toggle]').forEach(function(btn){
+    btn.addEventListener('click', function(){ btn.classList.toggle('is-on'); });
+  });
+  /* ============ Orders tab: list at scale + Orders/Analytics toggle ============ */
+  var warehousePool=['Warehouse A','Warehouse B'];
+
+  document.querySelectorAll('#orders-tab-seg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#orders-tab-seg button').forEach(function(x){ x.classList.remove('is-active'); });
+      b.classList.add('is-active');
+      var isList = b.dataset.ordertab==='list';
+      document.getElementById('orders-list-view').style.display = isList ? 'block' : 'none';
+      document.getElementById('orders-analytics-view').style.display = isList ? 'none' : 'block';
+    });
+  });
+
+  var ordStatusNames=['Pending','Packed','Shipped','Delivered'];
+  var myOrders=[{
+    id:'A2291', shopper:'Nueng T.', items:'Stackable Bin 12L × 2', total:780, daysAgo:0,
+    stepIndex:1, slaOk:true, slaText:'Pickup SLA: hand off by 6:32 PM today',
+    others:[{status:'On track'}]
+  }];
+  for(var moi=1; moi<40; moi++){
+    var stepI2=randInt(0,3);
+    var slaOk2=rand()<0.87;
+    var others2=[];
+    if(rand()<0.35){
+      var oc2 = rand()<0.8 ? 1 : 2;
+      for(var ocx=0; ocx<oc2; ocx++){ others2.push({status: rand()<0.85?'On track':'Delayed'}); }
+    }
+    var newOrder={
+      id:'A'+randInt(2000,9999),
+      shopper: pick(['Nueng T.','Ploy S.','Ohm K.','Bank P.','Fah W.','Mint T.','Gift S.','Ton K.','Pang P.','Kwan W.']),
+      items: genProductName()+' × '+randInt(1,3),
+      total: randInt(150,1800),
+      daysAgo: randInt(0,13),
+      stepIndex: stepI2, slaOk: slaOk2,
+      slaText: pick(['Pickup SLA: hand off within 48h','Delivery SLA: within zone target, 2 days','Pickup SLA: hand off by end of day']),
+      others: others2
+    };
+    if(stepI2===3){
+      var payRoll=rand();
+      if(payRoll<0.45){ newOrder.payoutStage='holding'; newOrder.holdingDay=randInt(1,6); }
+      else if(payRoll<0.7){ newOrder.payoutStage='ready'; newOrder.holdingDay=7; }
+      else { newOrder.payoutStage='paid'; newOrder.paidDate=pick(['Mon, Aug 4','Thu, Jul 31','Mon, Jul 28']); }
+    }
+    myOrders.push(newOrder);
+  }
+
+  function ordStatusLabel(o){ return o.slaOk ? ordStatusNames[o.stepIndex] : 'Delayed'; }
+  function ordStatusClass(o){ return o.slaOk ? ordStatusNames[o.stepIndex].toLowerCase() : 'delayed'; }
+
+  var activeMyOrderId=myOrders[0].id;
+  var ordQuery='', ordStatusFilter='All', ordSort='newest';
+
+  function visibleMyOrders(){
+    var q=ordQuery.toLowerCase();
+    var list=myOrders.filter(function(o){
+      var mq=!q || o.id.toLowerCase().indexOf(q)>-1 || o.shopper.toLowerCase().indexOf(q)>-1;
+      var mf;
+      if(ordStatusFilter==='All') mf=true;
+      else if(ordStatusFilter.indexOf('payout:')===0) mf = o.payoutStage===ordStatusFilter.split(':')[1];
+      else mf = ordStatusLabel(o)===ordStatusFilter;
+      return mq && mf;
+    });
+    list.sort(function(a,b){
+      if(ordSort==='value') return b.total-a.total;
+      if(ordSort==='oldest') return b.daysAgo-a.daysAgo;
+      return a.daysAgo-b.daysAgo;
+    });
+    return list;
+  }
+  document.getElementById('ord-status-filter').addEventListener('change', function(e){ ordStatusFilter=e.target.value; renderOrdList(); });
+  function renderOrdSortChips(){
+    var el=document.getElementById('ord-sort-chips');
+    var opts=[['newest','Newest'],['oldest','Oldest'],['value','Highest value']];
+    el.innerHTML='';
+    opts.forEach(function(pair){
+      var chip=document.createElement('span');
+      chip.className='chip'+(pair[0]===ordSort?' is-active':'');
+      chip.textContent='Sort: '+pair[1];
+      chip.addEventListener('click', function(){ ordSort=pair[0]; renderOrdSortChips(); renderOrdList(); });
+      el.appendChild(chip);
+    });
+  }
+  function renderOrdList(){
+    var filtered=visibleMyOrders();
+    var listEl=document.getElementById('ord-list');
+    listEl.innerHTML='';
+    filtered.forEach(function(o){
+      var row=document.createElement('div');
+      row.className='ord-row'+(o.id===activeMyOrderId?' is-active':'');
+      row.innerHTML =
+        '<div class="ord-row-top"><span class="ord-id">#'+o.id+'</span><span class="ord-status-chip '+ordStatusClass(o)+'">'+ordStatusLabel(o)+'</span></div>'+
+        '<div class="ord-row-meta">'+o.items+' · '+o.shopper+' · '+(o.daysAgo===0?'today':o.daysAgo+'d ago')+'</div>'+
+        '<div class="ord-row-bottom"><span class="ord-value">฿'+o.total.toLocaleString()+'</span>'+
+        (o.others.length ? '<span class="ord-split-tag">+'+o.others.length+' other seller'+(o.others.length>1?'s':'')+'</span>' : '')+'</div>';
+      row.addEventListener('click', function(id){ return function(){ activeMyOrderId=id; renderOrdList(); renderOrdDetail(); }; }(o.id));
+      listEl.appendChild(row);
+    });
+    document.getElementById('ord-summary').textContent = filtered.length+' of '+myOrders.length+' orders';
+  }
+  function renderOrdDetail(){
+    var o=myOrders.filter(function(x){ return x.id===activeMyOrderId; })[0];
+    var el=document.getElementById('ord-detail');
+    if(!o){ el.innerHTML=''; return; }
+    var html='<div class="order-parent"><div class="order-parent-top">'+
+      '<div><div class="order-id">ORDER #'+o.id+'</div><div class="order-meta">'+o.shopper+' · '+(o.others.length?(1+o.others.length)+' merchants':'1 merchant')+'</div></div>'+
+      '<div><div class="order-total">฿'+o.total.toLocaleString()+'</div><div class="order-meta">your share</div></div>'+
+      '</div><div class="fork"><div class="fork-item mine"><div class="fork-head"><div>'+
+      '<div class="fork-merchant">Baan Ruen Home Co. <span class="fork-you-tag">(YOU)</span></div>'+
+      '<div class="fork-logistics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h11l4 4h3v-4l-3-5h-4"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg>via Kerry Express</div>'+
+      '</div></div><div class="fork-items">'+o.items+' · ฿'+o.total.toLocaleString()+'</div><div class="stepper">';
+    var ordStepLabels=['Confirmed','Packed','Picked&nbsp;up','Delivered'];
+    for(var i=0;i<4;i++){
+      var cls = i<o.stepIndex ? 'done' : (i===o.stepIndex ? 'current' : '');
+      html += '<div class="step '+cls+'"><div class="step-line"></div><div class="step-dot"></div><div class="step-label">'+ordStepLabels[i]+'</div></div>';
+    }
+    html += '</div><div class="sla-line"><span>'+o.slaText+'</span><span class="'+(o.slaOk?'sla-ok':'sla-warn')+'">'+(o.slaOk?'on track':'delayed')+'</span></div>';
+    if(o.stepIndex<3){
+      html += '<button class="checkout-btn" id="ord-advance-btn" style="margin-top:10px;">Mark as '+ordStepLabels[o.stepIndex+1]+' →</button>';
+    } else {
+      html += '<div class="badge badge-verified" style="margin-top:10px; display:inline-block;">✓ Delivered</div>';
+      if(o.payoutStage){
+        var netAmt=Math.round(o.total*0.95);
+        var payoutStepLabels=['Holding','Commission&nbsp;deducted','Paid&nbsp;out'];
+        var payoutStepIdx = o.payoutStage==='holding' ? 0 : (o.payoutStage==='ready' ? 1 : 3);
+        html += '<p class="section-label" style="margin:16px 0 6px;">Your payout for this order</p><div class="stepper">';
+        for(var pi2=0; pi2<3; pi2++){
+          var pcls = pi2<payoutStepIdx ? 'done' : (pi2===payoutStepIdx ? 'current' : '');
+          html += '<div class="step '+pcls+'"><div class="step-line"></div><div class="step-dot"></div><div class="step-label">'+payoutStepLabels[pi2]+'</div></div>';
+        }
+        html += '</div>';
+        var payoutSub = o.payoutStage==='holding'
+          ? ('Day '+o.holdingDay+' of 7 · ฿'+netAmt.toLocaleString()+' net after 5% commission, once released')
+          : o.payoutStage==='ready'
+            ? ('Commission deducted · ฿'+netAmt.toLocaleString()+' queued for the next Mon/Thu batch')
+            : ('Paid on '+o.paidDate+' · ฿'+netAmt.toLocaleString()+' net after 5% commission');
+        html += '<div class="sla-line" style="border-top:none; padding-top:8px; margin-top:6px;"><span>'+payoutSub+'</span></div>';
+      }
+    }
+    html += '</div>';
+    o.others.forEach(function(other, idx){
+      html += '<div class="fork-item"><div class="fork-head"><div><div class="fork-merchant">Another Amaze Seller</div>'+
+        '<div class="fork-logistics" style="opacity:.6;">Identity and courier hidden — need-to-know only</div></div>'+
+        '<span class="badge '+(other.status==='On track'?'badge-approved':'badge-rejected')+'">'+other.status+'</span></div></div>';
+    });
+    html += '</div></div>';
+    el.innerHTML=html;
+    var advanceBtn=document.getElementById('ord-advance-btn');
+    if(advanceBtn){
+      advanceBtn.addEventListener('click', function(){
+        o.stepIndex=Math.min(3,o.stepIndex+1);
+        if(o.stepIndex===3){
+          o.slaText='Delivered';
+          o.payoutStage='holding';
+          o.holdingDay=1;
+        }
+        renderOrdDetail();
+        renderOrdList();
+      });
+    }
+  }
+  document.getElementById('ord-search').addEventListener('input', function(e){ ordQuery=e.target.value; renderOrdList(); });
+  renderOrdSortChips();
+  renderOrdList();
+  renderOrdDetail();
+
+  /* ============ Payout: current balance pipeline + expandable history ============ */
+  var payoutHistory=[
+    {id:'py1', date:'Mon, Aug 4', orders:42, gross:48200, commission:2410, refunds:640, orderList:['A2291 · ฿780','A5512 · ฿1,240','A7788 · ฿460','+39 more orders']},
+    {id:'py2', date:'Thu, Jul 31', orders:35, gross:39800, commission:1990, refunds:890, orderList:['A3301 · ฿920','A6642 · ฿540','+33 more orders']},
+    {id:'py3', date:'Mon, Jul 28', orders:38, gross:42600, commission:2130, refunds:870, orderList:['A1198 · ฿670','A4457 · ฿1,050','+36 more orders']},
+    {id:'py4', date:'Thu, Jul 24', orders:29, gross:31400, commission:1570, refunds:410, orderList:['A9021 · ฿390','A2276 · ฿780','+27 more orders']},
+    {id:'py5', date:'Mon, Jul 21', orders:33, gross:36900, commission:1845, refunds:520, orderList:['A6631 · ฿460','A3387 · ฿910','+31 more orders']}
+  ];
+  function renderPayoutHistory(){
+    var wrap=document.getElementById('payout-history-list');
+    wrap.innerHTML='';
+    payoutHistory.forEach(function(p){
+      var net=p.gross-p.commission-p.refunds;
+      var div=document.createElement('div');
+      div.className='payout-hist-item';
+      div.innerHTML =
+        '<div class="payout-hist-top"><div><div class="payout-hist-date">'+p.date+'</div><div class="payout-hist-meta">'+p.orders+' orders</div></div><div class="payout-hist-amount">฿'+net.toLocaleString()+'</div></div>'+
+        '<div class="payout-hist-detail">'+
+        '<div class="payout-hist-row"><span>Gross sales</span><span>฿'+p.gross.toLocaleString()+'</span></div>'+
+        '<div class="payout-hist-row"><span>Commission</span><span>−฿'+p.commission.toLocaleString()+'</span></div>'+
+        '<div class="payout-hist-row"><span>Refunds</span><span>−฿'+p.refunds.toLocaleString()+'</span></div>'+
+        '<div class="payout-hist-row" style="font-weight:700; border-top:1px solid var(--line); padding-top:6px;"><span>Net paid</span><span>฿'+net.toLocaleString()+'</span></div>'+
+        '<div class="payout-hist-orders">Included: '+p.orderList.join(', ')+'</div>'+
+        '</div>';
+      div.addEventListener('click', function(){ div.classList.toggle('is-open'); });
+      wrap.appendChild(div);
+    });
+  }
+  function renderPayoutCurrent(){
+    var deliveredNotYetPaid=myOrders.filter(function(o){ return o.stepIndex===3; });
+    var pendingCount=deliveredNotYetPaid.length + 9;
+    var pendingGross=pendingCount*randInt(280,650)+3200;
+    document.getElementById('payout-current-amount').textContent='฿'+pendingGross.toLocaleString();
+    document.getElementById('payout-current-meta').textContent=pendingCount+' orders delivered since last payout';
+    document.getElementById('payout-current-sub').textContent='Oldest order: day 4 of 7 in holding period · next payout Mon, Aug 11';
+  }
+  renderPayoutHistory();
+  renderPayoutCurrent();
+
+  /* ============ Catalog: your storefront, add / edit / delete products, at scale ============ */
+  var products=[
+    {id:'p1', name:'Stackable Bin 12L', sku:'BR-1204', warehouse:'Warehouse A', price:390, stock:142, syncSource:'pos', syncNote:'2 min ago'},
+    {id:'p2', name:'Dish Soap Refill 1L', sku:'BR-0892', warehouse:'Warehouse A', price:89, stock:6, syncSource:'pos', syncNote:'2 min ago'},
+    {id:'p3', name:'Bamboo Utensil Set', sku:'BR-0451', warehouse:'Warehouse B', price:460, stock:58, syncSource:'manual', syncNote:'updated today'},
+    {id:'p4', name:'Ceramic Coffee Dripper', sku:'BR-0902', warehouse:'Warehouse A', price:299, stock:27, syncSource:'pos', syncNote:'2 min ago'},
+    {id:'p5', name:'Wooden Spice Rack', sku:'BR-1150', warehouse:'Warehouse B', price:219, stock:3, syncSource:'manual', syncNote:'updated 6 days ago', stale:true}
+  ];
+  for(var pi=6; pi<=44; pi++){
+    var stockVal2 = rand()<0.14 ? randInt(1,9) : randInt(10,180);
+    var isPos = rand()<0.6;
+    products.push({
+      id:'p'+pi, name:genProductName(), sku:'BR-'+randInt(1000,9999), warehouse:pick(warehousePool),
+      price:randInt(59,690), stock:stockVal2,
+      syncSource: isPos?'pos':'manual',
+      syncNote: isPos ? (randInt(1,40)+' min ago') : (rand()<0.3 ? (randInt(2,8)+' days ago') : 'updated today'),
+      stale: !isPos && rand()<0.3
+    });
+  }
+
+  var LOW_STOCK_THRESHOLD=10;
+  var editingProductId=null;
+  var catQuery='', catFilter='All', catSort='name', catPage=1, catPerPage=8;
+
+  function visibleProducts(){
+    var q=catQuery.toLowerCase();
+    var list=products.filter(function(p){
+      var mq=!q || p.name.toLowerCase().indexOf(q)>-1 || p.sku.toLowerCase().indexOf(q)>-1;
+      var mf = catFilter==='All'
+        || (catFilter==='Low stock' && p.stock<LOW_STOCK_THRESHOLD)
+        || (catFilter==='Synced' && p.syncSource==='pos')
+        || (catFilter==='Manual' && p.syncSource==='manual');
+      return mq && mf;
+    });
+    list.sort(function(a,b){
+      if(catSort==='price') return a.price-b.price;
+      if(catSort==='stock') return a.stock-b.stock;
+      return a.name.localeCompare(b.name);
+    });
+    return list;
+  }
+  function renderCatFilterChips(){
+    var el=document.getElementById('cat-filter-chips');
+    var lowCount=products.filter(function(p){ return p.stock<LOW_STOCK_THRESHOLD; }).length;
+    var opts=[['All','All'],['Low stock','Low stock ('+lowCount+')'],['Synced','Synced (POS)'],['Manual','Manual entry']];
+    el.innerHTML='';
+    opts.forEach(function(pair){
+      var chip=document.createElement('span');
+      chip.className='chip'+(pair[0]===catFilter?' is-active':'');
+      chip.textContent=pair[1];
+      chip.addEventListener('click', function(){ catFilter=pair[0]; catPage=1; renderCatFilterChips(); renderCatalog(); });
+      el.appendChild(chip);
+    });
+  }
+  function renderCatSortChips(){
+    var el=document.getElementById('cat-sort-chips');
+    var opts=[['name','Name A–Z'],['price','Price low–high'],['stock','Stock low–high']];
+    el.innerHTML='';
+    opts.forEach(function(pair){
+      var chip=document.createElement('span');
+      chip.className='chip'+(pair[0]===catSort?' is-active':'');
+      chip.textContent='Sort: '+pair[1];
+      chip.addEventListener('click', function(){ catSort=pair[0]; renderCatSortChips(); renderCatalog(); });
+      el.appendChild(chip);
+    });
+  }
+
+  function renderCatalog(){
+    var all=visibleProducts();
+    var totalPages=Math.max(1, Math.ceil(all.length/catPerPage));
+    if(catPage>totalPages) catPage=totalPages;
+    var pageItems=paginate(all, catPage, catPerPage);
+    var wrap=document.getElementById('catalog-list');
+    wrap.innerHTML='';
+    pageItems.forEach(function(p){
+      var isLow=p.stock<LOW_STOCK_THRESHOLD;
+      var row=document.createElement('div');
+      if(editingProductId===p.id){
+        row.className='cat-row';
+        row.innerHTML =
+          '<div class="cat-edit-form">'+
+          '<div class="wiz-field"><label>Name</label><input type="text" id="ef-name-'+p.id+'" value="'+p.name+'"></div>'+
+          '<div class="wiz-field"><label>Price (฿)</label><input type="number" id="ef-price-'+p.id+'" value="'+p.price+'"></div>'+
+          '<div class="wiz-field"><label>Stock</label><input type="number" id="ef-stock-'+p.id+'" value="'+p.stock+'"></div>'+
+          '<div class="cat-edit-actions"><button class="cat-cancel-btn" data-cancel="'+p.id+'">Cancel</button><button class="cat-save-btn" data-save="'+p.id+'">Save</button></div>'+
+          '</div>';
+      } else {
+        row.className='cat-row'+(isLow?' low':'');
+        var syncHtml = p.syncSource==='pos'
+          ? '<div class="inv-sync synced">🔌 Synced via POS · '+p.syncNote+'</div>'
+          : '<div class="inv-sync manual'+(p.stale?' stale':'')+'">✍️ Manual entry · '+p.syncNote+'</div>';
+        row.innerHTML =
+          '<div class="cat-row-top"><div><div class="cat-name">'+p.name+'</div><div class="cat-meta">SKU '+p.sku+' · '+p.warehouse+'</div>'+syncHtml+'</div>'+
+          '<div class="cat-actions"><button class="cat-icon-btn" data-edit="'+p.id+'" title="Edit">✎</button><button class="cat-icon-btn danger" data-delete="'+p.id+'" title="Delete">🗑</button></div></div>'+
+          '<div class="cat-row-bottom"><span class="cat-price">฿'+p.price+'</span><span class="cat-stock'+(isLow?' low-text':'')+'">'+p.stock+' in stock'+(isLow?' · low':'')+'</span></div>';
+      }
+      wrap.appendChild(row);
+    });
+    document.getElementById('catalog-summary').textContent = all.length+' of '+products.length+' products';
+    document.getElementById('cat-pageinfo').textContent='Page '+catPage+' of '+totalPages;
+    document.getElementById('cat-prev').disabled=catPage<=1;
+    document.getElementById('cat-next').disabled=catPage>=totalPages;
+
+    wrap.querySelectorAll('[data-edit]').forEach(function(b){
+      b.addEventListener('click', function(){ editingProductId=b.dataset.edit; renderCatalog(); });
+    });
+    wrap.querySelectorAll('[data-cancel]').forEach(function(b){
+      b.addEventListener('click', function(){ editingProductId=null; renderCatalog(); });
+    });
+    wrap.querySelectorAll('[data-delete]').forEach(function(b){
+      b.addEventListener('click', function(){ products=products.filter(function(p){ return p.id!==b.dataset.delete; }); renderCatalog(); });
+    });
+    wrap.querySelectorAll('[data-save]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var id=b.dataset.save;
+        var p=products.filter(function(x){ return x.id===id; })[0];
+        var nameVal=document.getElementById('ef-name-'+id).value.trim();
+        var priceVal=parseFloat(document.getElementById('ef-price-'+id).value);
+        var stockVal=parseInt(document.getElementById('ef-stock-'+id).value,10);
+        if(nameVal) p.name=nameVal;
+        if(!isNaN(priceVal)) p.price=priceVal;
+        if(!isNaN(stockVal)) p.stock=stockVal;
+        p.syncSource='manual'; p.syncNote='updated just now'; p.stale=false;
+        editingProductId=null;
+        renderCatalog();
+      });
+    });
+  }
+  document.getElementById('cat-search').addEventListener('input', function(e){ catQuery=e.target.value; catPage=1; renderCatalog(); });
+  document.getElementById('cat-prev').addEventListener('click', function(){ if(catPage>1){ catPage--; renderCatalog(); } });
+  document.getElementById('cat-next').addEventListener('click', function(){ catPage++; renderCatalog(); });
+  document.getElementById('add-product-btn').addEventListener('click', function(){
+    var formEl=document.getElementById('add-product-form');
+    formEl.style.display = formEl.style.display==='none' ? 'block' : 'none';
+  });
+  document.getElementById('add-product-save').addEventListener('click', function(){
+    var name=document.getElementById('new-prod-name').value.trim();
+    var price=parseFloat(document.getElementById('new-prod-price').value);
+    var stock=parseInt(document.getElementById('new-prod-stock').value,10);
+    if(!name || isNaN(price) || isNaN(stock)) return;
+    products.push({id:'p'+Date.now(), name:name, sku:'BR-'+randInt(1000,9999), warehouse:'Warehouse A', price:price, stock:stock, syncSource:'manual', syncNote:'just added'});
+    document.getElementById('new-prod-name').value='';
+    document.getElementById('new-prod-price').value='';
+    document.getElementById('new-prod-stock').value='';
+    document.getElementById('add-product-form').style.display='none';
+    catQuery=name; document.getElementById('cat-search').value=name; catPage=1;
+    renderCatalog();
+  });
+  renderCatFilterChips();
+  renderCatSortChips();
+  renderCatalog();
+
+  /* ============ Order Lookup: searchable order list + dynamic full timeline ============ */
+  var productWords=['Storage Bin','Utensil Set','Coffee Dripper','Spice Rack','Rain Boots','Desk Lamp','Water Bottle','Yoga Mat','Cutting Board','Backpack','Air Fryer','Dish Rack'];
+  var courierPool=['Kerry Express','Flash Express','J&T Express','Ninja Van'];
+  var shopperNames=['Nueng T.','Ploy S.','Ohm K.','Bank P.','Fah W.','Mint T.','Gift S.','Ton K.','Pang P.','Kwan W.','Aum T.','Beam S.'];
+
+  var payoutStepLabelsShort=['Holding','Commission deducted','Paid out'];
+  var disputeReasons=['Buyer reported item not as described','Buyer requested partial refund','Item reported damaged on arrival','Chargeback initiated by payment provider','Buyer disputes quantity received'];
+  function genPayoutState(price){
+    var r=rand();
+    var stepIndex = r<0.55 ? 0 : (r<0.75 ? 1 : 2);
+    var commissionRate = rand()<0.5 ? 0.05 : 0.08;
+    var net = Math.round(price*(1-commissionRate));
+    var slaOk = stepIndex===2 ? true : rand()<0.78;
+    var target = stepIndex===0 ? 72 : 120;
+    var delay = slaOk ? 0 : randInt(4,40);
+    /* A dispute is a specific, real problem — not the default state of every holding-stage
+       payout. It only exists when a holding-stage payout is actually breaching. */
+    var hasDispute = stepIndex===0 && !slaOk;
+    var disputeReason = hasDispute ? pick(disputeReasons) : null;
+    return {
+      payoutStepIndex: stepIndex,
+      payoutDay: randInt(1,7),
+      payoutNet: net,
+      payoutCommissionRate: commissionRate,
+      payoutSlaOk: slaOk,
+      payoutTarget: target,
+      payoutDelay: delay,
+      hasDispute: hasDispute,
+      disputeReason: disputeReason,
+      payoutStage: hasDispute ? 'Dispute resolution' : (stepIndex===0 ? 'Holding period' : 'Payout release')
+    };
+  }
+
+  var sampleOrders=[{
+    id:'A2291', shopper:'Nueng T.', placedTime:'10:32 AM', total:1240,
+    subOrders:[
+      Object.assign({merchant:'Baan Ruen Home Co.', logistics:'Kerry Express', items:'Stackable Bin 12L × 2 · ฿780', stepIndex:1, slaText:'Pickup SLA: hand off by 6:32 PM today', slaOk:true}, genPayoutState(780)),
+      Object.assign({merchant:'Zone3 Traders', logistics:'Flash Express', items:'Bamboo Utensil Set × 1 · ฿460', stepIndex:2, slaText:'Delivery SLA: within Zone 3 target, 2 days', slaOk:true}, genPayoutState(460))
+    ]
+  }];
+  for(var oi=1; oi<15; oi++){
+    var subCount = rand()<0.5 ? 1 : (rand()<0.75 ? 2 : 3);
+    var subs=[]; var total=0;
+    for(var si=0; si<subCount; si++){
+      var price=randInt(150,900);
+      total+=price;
+      var slaOk = rand()<0.76;
+      subs.push(Object.assign({
+        merchant: genName(),
+        logistics: pick(courierPool),
+        items: pick(productWords)+' × '+randInt(1,3)+' · ฿'+price,
+        stepIndex: randInt(0,3),
+        slaText: pick(['Pickup SLA: hand off within 48h','Delivery SLA: within zone target, 2 days','Pickup SLA: hand off by end of day']),
+        slaOk: slaOk
+      }, genPayoutState(price)));
+    }
+    sampleOrders.push({
+      id:'A'+randInt(2000,9999),
+      shopper: pick(shopperNames),
+      placedTime: randInt(8,20)+':'+['00','10','20','30','40','50'][randInt(0,5)]+(rand()<0.5?' AM':' PM'),
+      total: total,
+      subOrders: subs
+    });
+  }
+
+  var stepLabels=['Confirmed','Packed','Picked&nbsp;up','Delivered'];
+  function renderOrderDetailHTML(order){
+    var html='<div class="order-parent" style="margin-bottom:6px;"><div class="order-parent-top">'+
+      '<div><div class="order-id">ORDER #'+order.id+'</div><div class="order-meta">'+order.subOrders.length+' merchant'+(order.subOrders.length>1?'s':'')+' · placed '+order.placedTime+' · '+order.shopper+'</div></div>'+
+      '<div><div class="order-total">฿'+order.total.toLocaleString()+'</div><div class="order-meta">shopper paid, once</div></div>'+
+      '</div><div class="fork">';
+    order.subOrders.forEach(function(so){
+      html += '<div class="fork-item"><div class="fork-head"><div><div class="fork-merchant">'+so.merchant+'</div>'+
+        '<div class="fork-logistics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h11l4 4h3v-4l-3-5h-4"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg>via '+so.logistics+'</div></div></div>'+
+        '<div class="fork-items">'+so.items+'</div><div class="stepper">';
+      for(var i=0;i<4;i++){
+        var cls = i<so.stepIndex ? 'done' : (i===so.stepIndex ? 'current' : '');
+        html += '<div class="step '+cls+'"><div class="step-line"></div><div class="step-dot"></div><div class="step-label">'+stepLabels[i]+'</div></div>';
+      }
+      html += '</div><div class="sla-line"><span>'+so.slaText+'</span><span class="'+(so.slaOk?'sla-ok':'sla-warn')+'">'+(so.slaOk?'on track':'delayed')+'</span></div>'+
+        '<div style="font-size:9.5px; color:var(--ink-soft); font-weight:600; margin:12px 0 2px; text-transform:uppercase; letter-spacing:.03em;">Payout to '+so.merchant+'</div>'+
+        '<div class="stepper">';
+      for(var pi=0;pi<3;pi++){
+        var pcls = pi<so.payoutStepIndex ? 'done' : (pi===so.payoutStepIndex ? 'current' : '');
+        html += '<div class="step '+pcls+'"><div class="step-line"></div><div class="step-dot"></div><div class="step-label">'+payoutStepLabelsShort[pi]+'</div></div>';
+      }
+      var payoutSlaText = so.payoutStepIndex===2
+        ? ('Paid out · ฿'+so.payoutNet.toLocaleString()+' net after '+Math.round(so.payoutCommissionRate*100)+'%')
+        : (so.payoutStage+' target: within '+so.payoutTarget+'h · Day '+so.payoutDay+' of 7 · ฿'+so.payoutNet.toLocaleString()+' net after '+Math.round(so.payoutCommissionRate*100)+'%');
+      html += '</div><div class="sla-line"><span>'+payoutSlaText+'</span><span class="'+(so.payoutSlaOk?'sla-ok':'sla-warn')+'">'+(so.payoutSlaOk?'on track':('+'+so.payoutDelay+'h late'))+'</span></div>'+
+        (so.hasDispute ? '<div style="margin-top:6px; background:var(--urgency-soft); color:var(--urgency); border-radius:8px; padding:8px 10px; font-size:11px; font-weight:600;">⚠ Dispute: '+so.disputeReason+'</div>' : '')+
+        '</div>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  var activeOrderId='A2291';
+  function renderLookupList(){
+    var q=(document.getElementById('lookup-search').value||'').toLowerCase();
+    var filtered=sampleOrders.filter(function(o){
+      return !q || o.id.toLowerCase().indexOf(q)>-1 || o.shopper.toLowerCase().indexOf(q)>-1;
+    });
+    var listEl=document.getElementById('lookup-list');
+    listEl.innerHTML='';
+    filtered.forEach(function(o){
+      var hasBreach=o.subOrders.some(function(so){ return !so.slaOk || !so.payoutSlaOk; });
+      var row=document.createElement('div');
+      row.className='olk-row'+(o.id===activeOrderId?' is-active':'');
+      row.innerHTML =
+        '<div><div class="olk-id">#'+o.id+'</div><div class="olk-meta">'+o.shopper+' · '+o.subOrders.length+' merchant'+(o.subOrders.length>1?'s':'')+' · ฿'+o.total.toLocaleString()+'</div></div>'+
+        (hasBreach?'<span class="olk-flag">⚠ delayed</span>':'');
+      row.addEventListener('click', function(id){ return function(){ activeOrderId=id; renderLookupList(); renderLookupDetail(); }; }(o.id));
+      listEl.appendChild(row);
+    });
+    document.getElementById('lookup-summary').textContent = filtered.length+' of '+sampleOrders.length+' recent orders';
+  }
+  function renderLookupDetail(){
+    var order=sampleOrders.filter(function(o){ return o.id===activeOrderId; })[0];
+    document.getElementById('lookup-detail').innerHTML = order ? renderOrderDetailHTML(order) : '<p style="font-size:12px; color:var(--ink-soft);">No order selected.</p>';
+  }
+  document.getElementById('lookup-search').addEventListener('input', renderLookupList);
+  renderLookupList();
+  renderLookupDetail();
+
+  function jumpToOrder(orderId){
+    activeOrderId=orderId;
+    acButtons.forEach(function(b){ b.classList.toggle('is-active', b.dataset.ac==='lookup'); });
+    acPanels.forEach(function(p){ p.classList.toggle('is-active', p.dataset.acpanel==='lookup'); });
+    document.getElementById('lookup-search').value='';
+    renderLookupList();
+    renderLookupDetail();
+  }
+
+  /* ============ SLA Exceptions: which order, which stage, how late ============ */
+  var exceptionRows=[];
+  sampleOrders.forEach(function(o){
+    o.subOrders.forEach(function(so){
+      if(!so.slaOk){
+        var target=randInt(24,48);
+        var delay=randInt(2,30);
+        exceptionRows.push({
+          orderId:o.id,
+          party: rand()<0.5 ? 'Merchant' : 'Logistics Partner',
+          stage: rand()<0.5 ? 'Courier hand-off' : 'Delivery',
+          target:target, elapsed:target+delay, delay:delay
+        });
+      }
+    });
+  });
+  sampleOrders.forEach(function(o){
+    o.subOrders.forEach(function(so){
+      if(!so.payoutSlaOk){
+        exceptionRows.push({
+          orderId:o.id,
+          party:'Amaze Finance',
+          stage: so.payoutStage,
+          target:so.payoutTarget, elapsed:so.payoutTarget+so.payoutDelay, delay:so.payoutDelay
+        });
+      }
+    });
+  });
+  exceptionRows.sort(function(a,b){ return b.delay-a.delay; });
+
+  var excPage=1, excPerPage=8, excQuery='', excFilter='All';
+  function visibleExceptions(){
+    var q=excQuery.toLowerCase();
+    return exceptionRows.filter(function(r){
+      var mq=!q || r.orderId.toLowerCase().indexOf(q)>-1;
+      var mf=excFilter==='All' || r.party===excFilter;
+      return mq && mf;
+    });
+  }
+  function renderExceptionChips(){
+    var el=document.getElementById('exceptions-chips');
+    var opts=['All','Merchant','Logistics Partner','Amaze Finance'];
+    el.innerHTML='';
+    opts.forEach(function(o){
+      var chip=document.createElement('span');
+      chip.className='chip'+(o===excFilter?' is-active':'');
+      chip.textContent=o;
+      chip.addEventListener('click', function(){ excFilter=o; excPage=1; renderExceptionChips(); renderExceptions(); });
+      el.appendChild(chip);
+    });
+  }
+  function renderExceptions(){
+    var all=visibleExceptions();
+    var totalPages=Math.max(1, Math.ceil(all.length/excPerPage));
+    if(excPage>totalPages) excPage=totalPages;
+    var pageItems=paginate(all, excPage, excPerPage);
+    var tbody=document.getElementById('exceptions-body');
+    tbody.innerHTML='';
+    pageItems.forEach(function(r){
+      var tr=document.createElement('tr');
+      tr.className='flag-row';
+      tr.innerHTML =
+        '<td>#'+r.orderId+'</td><td>'+r.party+'</td><td>'+r.stage+'</td><td>'+r.target+'h</td><td>'+r.elapsed+'h</td>'+
+        '<td class="flag-text">+'+r.delay+'h late</td><td><button class="link-back" data-vieworder="'+r.orderId+'" style="margin-top:0;">View order →</button></td>';
+      tbody.appendChild(tr);
+    });
+    var avgDelay = exceptionRows.length ? Math.round(exceptionRows.reduce(function(s,r){ return s+r.delay; },0)/exceptionRows.length) : 0;
+    document.getElementById('exceptions-summary').textContent = exceptionRows.length+' orders currently breaching an SLA · avg delay '+avgDelay+'h';
+    document.getElementById('exceptions-pageinfo').textContent='Page '+excPage+' of '+totalPages;
+    document.getElementById('exceptions-prev').disabled=excPage<=1;
+    document.getElementById('exceptions-next').disabled=excPage>=totalPages;
+    tbody.querySelectorAll('[data-vieworder]').forEach(function(btn){
+      btn.addEventListener('click', function(){ jumpToOrder(btn.dataset.vieworder); });
+    });
+  }
+  document.getElementById('exceptions-search').addEventListener('input', function(e){ excQuery=e.target.value; excPage=1; renderExceptions(); });
+  document.getElementById('exceptions-prev').addEventListener('click', function(){ if(excPage>1){ excPage--; renderExceptions(); } });
+  document.getElementById('exceptions-next').addEventListener('click', function(){ excPage++; renderExceptions(); });
+  renderExceptionChips();
+  renderExceptions();
+
+  /* ============ ADMIN: Disputes — escalations needing a human decision ============ */
+  var disputeTypes=['Item not as described','Not delivered','Damaged in transit','Wrong item received','Refund requested'];
+  var disputeRows=[];
+  for(var dp=0; dp<26; dp++){
+    var srcOrder=pick(sampleOrders);
+    var status=pick(['Open','Open','Under Review','Resolved']);
+    disputeRows.push({
+      id:'D'+randInt(10000,99999),
+      orderId:srcOrder.id,
+      type:pick(disputeTypes),
+      filedBy: rand()<0.85 ? 'Shopper' : 'Merchant',
+      ageHours: randInt(1,96),
+      status: status,
+      resolution: status==='Resolved' ? pick(['Refunded shopper in full','Sided with merchant, no refund','Partial refund issued']) : null
+    });
+  }
+  disputeRows.sort(function(a,b){
+    var order={'Open':0,'Under Review':1,'Resolved':2};
+    return (order[a.status]-order[b.status]) || (b.ageHours-a.ageHours);
+  });
+
+  var activeDisputeId=null;
+  var disPage=1, disPerPage=8, disQuery='', disFilter='All';
+
+  function visibleDisputes(){
+    var q=disQuery.toLowerCase();
+    return disputeRows.filter(function(d){
+      var mq=!q || d.orderId.toLowerCase().indexOf(q)>-1 || d.id.toLowerCase().indexOf(q)>-1;
+      var mf=disFilter==='All' || d.status===disFilter;
+      return mq && mf;
+    });
+  }
+  function disputeStatusBadge(status){
+    if(status==='Open') return '<span class="badge badge-rejected">Open</span>';
+    if(status==='Under Review') return '<span class="badge badge-approved">Under Review</span>';
+    return '<span class="badge badge-verified">Resolved</span>';
+  }
+  function renderDisputeChips(){
+    var el=document.getElementById('disputes-chips');
+    var openCount=disputeRows.filter(function(d){return d.status==='Open';}).length;
+    var opts=[['All','All'],['Open','Open ('+openCount+')'],['Under Review','Under Review'],['Resolved','Resolved']];
+    el.innerHTML='';
+    opts.forEach(function(pair){
+      var chip=document.createElement('span');
+      chip.className='chip'+(pair[0]===disFilter?' is-active':'');
+      chip.textContent=pair[1];
+      chip.addEventListener('click', function(){ disFilter=pair[0]; disPage=1; renderDisputeChips(); renderDisputes(); });
+      el.appendChild(chip);
+    });
+  }
+  function renderDisputes(){
+    var all=visibleDisputes();
+    var totalPages=Math.max(1, Math.ceil(all.length/disPerPage));
+    if(disPage>totalPages) disPage=totalPages;
+    var pageItems=paginate(all, disPage, disPerPage);
+    var tbody=document.getElementById('disputes-body');
+    tbody.innerHTML='';
+    pageItems.forEach(function(d){
+      var tr=document.createElement('tr');
+      if(d.status==='Open') tr.className='flag-row';
+      tr.innerHTML =
+        '<td>#'+d.orderId+'</td><td>'+d.type+'</td><td>'+d.filedBy+'</td><td>'+d.ageHours+'h</td><td>'+disputeStatusBadge(d.status)+'</td>'+
+        '<td><button class="link-back" data-viewdispute="'+d.id+'" style="margin-top:0;">Review →</button></td>';
+      tbody.appendChild(tr);
+    });
+    var openC=disputeRows.filter(function(d){return d.status==='Open';}).length;
+    document.getElementById('disputes-summary').textContent = disputeRows.length+' total disputes · '+openC+' open, waiting on a decision';
+    document.getElementById('disputes-pageinfo').textContent='Page '+disPage+' of '+totalPages;
+    document.getElementById('disputes-prev').disabled=disPage<=1;
+    document.getElementById('disputes-next').disabled=disPage>=totalPages;
+    tbody.querySelectorAll('[data-viewdispute]').forEach(function(btn){
+      btn.addEventListener('click', function(){ openDisputeDetail(btn.dataset.viewdispute); });
+    });
+  }
+  document.getElementById('disputes-search').addEventListener('input', function(e){ disQuery=e.target.value; disPage=1; renderDisputes(); });
+  document.getElementById('disputes-prev').addEventListener('click', function(){ if(disPage>1){ disPage--; renderDisputes(); } });
+  document.getElementById('disputes-next').addEventListener('click', function(){ disPage++; renderDisputes(); });
+
+  function openDisputeDetail(id){
+    activeDisputeId=id;
+    document.getElementById('disputes-list-view').style.display='none';
+    document.getElementById('disputes-detail-view').style.display='block';
+    renderDisputeDetail();
+  }
+  function renderDisputeDetail(){
+    var d=disputeRows.filter(function(x){ return x.id===activeDisputeId; })[0];
+    var el=document.getElementById('disputes-detail-content');
+    if(!d){ el.innerHTML=''; return; }
+    var order=sampleOrders.filter(function(o){ return o.id===d.orderId; })[0];
+    var html =
+      '<div class="dispute-detail-card">'+
+      '<div class="dispute-detail-row"><span>Dispute ID</span><b>#'+d.id+'</b></div>'+
+      '<div class="dispute-detail-row"><span>Order</span><b>#'+d.orderId+'</b></div>'+
+      '<div class="dispute-detail-row"><span>Type</span><b>'+d.type+'</b></div>'+
+      '<div class="dispute-detail-row"><span>Filed by</span><b>'+d.filedBy+'</b></div>'+
+      '<div class="dispute-detail-row"><span>Age</span><b>'+d.ageHours+' hours</b></div>'+
+      '</div>'+
+      '<div class="dispute-evidence">📎 Evidence: photos and a message thread attached by the '+d.filedBy.toLowerCase()+' (not rendered in this mockup).</div>';
+
+    if(order){
+      html += '<p class="section-title" style="margin-top:0;">Order context</p>'+renderOrderDetailHTML(order);
+    }
+
+    if(d.status==='Resolved'){
+      html += '<div class="dispute-resolved-banner">✓ Resolved — '+d.resolution+'</div>';
+    } else {
+      html += '<p class="dispute-resolve-title">Resolve this dispute</p>'+
+        '<div class="dispute-resolve-actions">'+
+        '<button class="btn-refund" data-resolve="refund">Refund shopper</button>'+
+        '<button class="btn-merchant" data-resolve="merchant">Side with merchant</button>'+
+        '<button class="btn-escalate" data-resolve="escalate">Escalate to specialist</button>'+
+        '</div>';
+    }
+    el.innerHTML=html;
+    el.querySelectorAll('[data-resolve]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var action=btn.dataset.resolve;
+        if(action==='escalate'){
+          d.status='Under Review';
+        } else {
+          d.status='Resolved';
+          d.resolution = action==='refund' ? 'Refunded shopper in full' : 'Sided with merchant, no refund';
+        }
+        renderDisputeDetail();
+        renderDisputes();
+      });
+    });
+  }
+  document.getElementById('disputes-back').addEventListener('click', function(){
+    document.getElementById('disputes-detail-view').style.display='none';
+    document.getElementById('disputes-list-view').style.display='block';
+  });
+  renderDisputeChips();
+  renderDisputes();
+
+  /* ============ ADMIN: Merchant Approvals (142 synthetic, paginated, searchable, bulk) ============ */
+  var approvalMerchants=[];
+  for(var k=0;k<142;k++){ approvalMerchants.push({id:'m'+k, name:genName(), category:pick(categories), wait:randInt(1,96), status:'pending'}); }
+  approvalMerchants.sort(function(a,b){return b.wait-a.wait;});
+  var approvalsPage=1, approvalsPerPage=8, approvalsQuery='', selectedApprovals={};
+
+  function visibleApprovals(){
+    var q=approvalsQuery.toLowerCase();
+    return approvalMerchants.filter(function(m){
+      return m.status==='pending' && (!q || m.name.toLowerCase().indexOf(q)>-1 || m.category.toLowerCase().indexOf(q)>-1);
+    });
+  }
+  function updateBulkBar(){
+    var count=Object.keys(selectedApprovals).length;
+    var bar=document.getElementById('approvals-bulk-bar');
+    if(count>0){ bar.classList.add('is-visible'); bar.querySelector('.bulk-count').textContent=count+' selected'; }
+    else{ bar.classList.remove('is-visible'); }
+  }
+  function setApprovalStatus(id,status){
+    var m=approvalMerchants.filter(function(x){return x.id===id;})[0];
+    if(m) m.status=status;
+    delete selectedApprovals[id];
+    renderApprovals();
+  }
+  function renderApprovals(){
+    var all=visibleApprovals();
+    var totalPages=Math.max(1, Math.ceil(all.length/approvalsPerPage));
+    if(approvalsPage>totalPages) approvalsPage=totalPages;
+    var pageItems=paginate(all, approvalsPage, approvalsPerPage);
+    var tbody=document.getElementById('approvals-body');
+    tbody.innerHTML='';
+    pageItems.forEach(function(m){
+      var tr=document.createElement('tr');
+      tr.innerHTML=
+        '<td><input type="checkbox" class="approve-check" data-id="'+m.id+'" '+(selectedApprovals[m.id]?'checked':'')+'></td>'+
+        '<td>'+m.name+'</td><td>'+m.category+'</td>'+
+        '<td><span class="badge badge-verified">Verified</span></td>'+
+        '<td>'+m.wait+'h waiting</td>'+
+        '<td><button class="btn-sm btn-approve" data-approve="'+m.id+'">Approve</button> <button class="btn-sm btn-reject" data-reject="'+m.id+'">Reject</button></td>';
+      tbody.appendChild(tr);
+    });
+    var shownFrom=all.length && pageItems.length ? (approvalsPage-1)*approvalsPerPage+1 : 0;
+    var shownTo=(approvalsPage-1)*approvalsPerPage+pageItems.length;
+    document.getElementById('approvals-summary').textContent = all.length
+      ? ('Showing '+shownFrom+'–'+shownTo+' of '+all.length+' pending merchants')
+      : 'No pending merchants match your search';
+    document.getElementById('approvals-pageinfo').textContent='Page '+approvalsPage+' of '+totalPages;
+    document.getElementById('approvals-prev').disabled=approvalsPage<=1;
+    document.getElementById('approvals-next').disabled=approvalsPage>=totalPages;
+
+    tbody.querySelectorAll('[data-approve]').forEach(function(btn){ btn.addEventListener('click', function(){ setApprovalStatus(btn.dataset.approve,'approved'); }); });
+    tbody.querySelectorAll('[data-reject]').forEach(function(btn){ btn.addEventListener('click', function(){ setApprovalStatus(btn.dataset.reject,'rejected'); }); });
+    tbody.querySelectorAll('.approve-check').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        if(cb.checked) selectedApprovals[cb.dataset.id]=true; else delete selectedApprovals[cb.dataset.id];
+        updateBulkBar();
+      });
+    });
+    updateBulkBar();
+  }
+  document.getElementById('approvals-bulk-approve').addEventListener('click', function(){
+    Object.keys(selectedApprovals).forEach(function(id){ setApprovalStatus(id,'approved'); });
+  });
+  document.getElementById('approvals-search').addEventListener('input', function(e){ approvalsQuery=e.target.value; approvalsPage=1; renderApprovals(); });
+  document.getElementById('approvals-prev').addEventListener('click', function(){ if(approvalsPage>1){approvalsPage--; renderApprovals();} });
+  document.getElementById('approvals-next').addEventListener('click', function(){ approvalsPage++; renderApprovals(); });
+  renderApprovals();
+
+  /* ============ ADMIN: Live Auctions table (reuses auctionRounds, paginated, filterable) ============ */
+  var acAuctionsPage=1, acAuctionsPerPage=6, acAuctionsQuery='', acAuctionsCat='All', acAuctionsZone='All';
+  populateFilterSelect(document.getElementById('ac-auctions-cat-select'), categoryGroups, 'All categories');
+  populateFilterSelect(document.getElementById('ac-auctions-zone-select'), zones, 'All zones');
+  document.getElementById('ac-auctions-cat-select').addEventListener('change', function(e){ acAuctionsCat=e.target.value; acAuctionsPage=1; renderAdminAuctions(); });
+  document.getElementById('ac-auctions-zone-select').addEventListener('change', function(e){ acAuctionsZone=e.target.value; acAuctionsPage=1; renderAdminAuctions(); });
+  function renderAdminAuctions(){
+    var q=acAuctionsQuery.toLowerCase();
+    var filtered=auctionRounds.filter(function(r){
+      var mq=!q || r.category.toLowerCase().indexOf(q)>-1 || zoneSummary(r).toLowerCase().indexOf(q)>-1;
+      var mCat=acAuctionsCat==='All' || r.categoryGroup===acAuctionsCat;
+      var mZone=acAuctionsZone==='All' || r.zoneBreakdown.some(function(z){return z.zone===acAuctionsZone;});
+      return mq && mCat && mZone && !r.closed;
+    }).sort(function(a,b){ return a.secondsLeft-b.secondsLeft; });
+    var totalPages=Math.max(1, Math.ceil(filtered.length/acAuctionsPerPage));
+    if(acAuctionsPage>totalPages) acAuctionsPage=totalPages;
+    var pageItems=paginate(filtered, acAuctionsPage, acAuctionsPerPage);
+    var tbody=document.getElementById('ac-auctions-body');
+    tbody.innerHTML='';
+    pageItems.forEach(function(r){
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td>'+r.category+' · '+zoneSummary(r)+'</td><td>'+r.demand+'</td><td>'+r.bids.length+'</td><td>฿'+leadBid(r)+'</td><td><span class="live-tag">'+formatTime(r.secondsLeft)+'</span></td>';
+      tbody.appendChild(tr);
+    });
+    var totalBidders=auctionRounds.filter(function(r){return !r.closed;}).reduce(function(s,r){return s+r.bids.length;},0);
+    document.getElementById('auctions-summary').textContent = filtered.length+' active rounds across '+zones.length+' zones · '+totalBidders+' merchant bids in play right now';
+    document.getElementById('ac-auctions-pageinfo').textContent='Page '+acAuctionsPage+' of '+totalPages;
+    document.getElementById('ac-auctions-prev').disabled=acAuctionsPage<=1;
+    document.getElementById('ac-auctions-next').disabled=acAuctionsPage>=totalPages;
+  }
+  document.getElementById('ac-auctions-search').addEventListener('input', function(e){ acAuctionsQuery=e.target.value; acAuctionsPage=1; renderAdminAuctions(); });
+  document.getElementById('ac-auctions-prev').addEventListener('click', function(){ if(acAuctionsPage>1){acAuctionsPage--; renderAdminAuctions();} });
+  document.getElementById('ac-auctions-next').addEventListener('click', function(){ acAuctionsPage++; renderAdminAuctions(); });
+  renderAdminAuctions();
+
+  /* ============ ADMIN: Fulfillment Monitor (180 synthetic, default = Flagged only) ============ */
+  var fulfillmentMerchants=[];
+  for(var f=0;f<180;f++){
+    var rate = f<14 ? randInt(48,79) : randInt(80,99);
+    fulfillmentMerchants.push({id:'f'+f, name:genName(), rate:rate, tier: rate>=95?'Gold':'Standard', flagged: rate<80});
+  }
+  fulfillmentMerchants.sort(function(){ return rand()-0.5; });
+  var fmPage=1, fmPerPage=8, fmQuery='', fmFilter='Flagged';
+  function visibleFM(){
+    var q=fmQuery.toLowerCase();
+    return fulfillmentMerchants.filter(function(m){
+      var mq=!q || m.name.toLowerCase().indexOf(q)>-1;
+      var mf=fmFilter==='All' || (fmFilter==='Flagged'&&m.flagged) || (fmFilter==='Gold'&&m.tier==='Gold') || (fmFilter==='Standard'&&m.tier==='Standard');
+      return mq && mf;
+    }).sort(function(a,b){ return a.rate-b.rate; });
+  }
+  function renderFMChips(){
+    var el=document.getElementById('fm-chips');
+    var flaggedCount=fulfillmentMerchants.filter(function(m){return m.flagged;}).length;
+    var opts=[['Flagged','Flagged ('+flaggedCount+')'],['All','All'],['Gold','Gold'],['Standard','Standard']];
+    el.innerHTML='';
+    opts.forEach(function(pair){
+      var chip=document.createElement('span');
+      chip.className='chip'+(pair[0]===fmFilter?' is-active':'');
+      chip.textContent=pair[1];
+      chip.addEventListener('click', function(){ fmFilter=pair[0]; fmPage=1; renderFMChips(); renderFM(); });
+      el.appendChild(chip);
+    });
+  }
+  function renderFM(){
+    var all=visibleFM();
+    var totalPages=Math.max(1, Math.ceil(all.length/fmPerPage));
+    if(fmPage>totalPages) fmPage=totalPages;
+    var pageItems=paginate(all, fmPage, fmPerPage);
+    var tbody=document.getElementById('fm-body');
+    tbody.innerHTML='';
+    pageItems.forEach(function(m){
+      var tr=document.createElement('tr');
+      if(m.flagged) tr.className='flag-row';
+      tr.innerHTML=
+        '<td>'+m.name+'</td>'+
+        '<td><span class="mini-bar-bg"><span class="mini-bar-fill" style="width:'+m.rate+'%;'+(m.flagged?'background:var(--urgency);':'')+'"></span></span>'+m.rate+'%</td>'+
+        '<td><span class="badge '+(m.tier==='Gold'?'badge-gold':'badge-standard')+'">'+m.tier+'</span></td>'+
+        '<td class="flag-text">'+(m.flagged?'⚠ SLA breach — tier downgrade pending':'')+'</td>';
+      tbody.appendChild(tr);
+    });
+    var flaggedTotal=fulfillmentMerchants.filter(function(m){return m.flagged;}).length;
+    document.getElementById('fm-summary').textContent = flaggedTotal+' of '+fulfillmentMerchants.length+' active merchants below the 80% SLA threshold · showing flagged first by default';
+    document.getElementById('fm-pageinfo').textContent='Page '+fmPage+' of '+totalPages;
+    document.getElementById('fm-prev').disabled=fmPage<=1;
+    document.getElementById('fm-next').disabled=fmPage>=totalPages;
+  }
+  document.getElementById('fm-search').addEventListener('input', function(e){ fmQuery=e.target.value; fmPage=1; renderFM(); });
+  document.getElementById('fm-prev').addEventListener('click', function(){ if(fmPage>1){fmPage--; renderFM();} });
+  document.getElementById('fm-next').addEventListener('click', function(){ fmPage++; renderFM(); });
+  renderFMChips();
+  renderFM();
+
+  /* ============ ADMIN: Payout batch — 4-stage tracking + held-for-review + manual correction ============ */
+  var payoutStageNames={delivered:'Order delivered', holding:'Hold period', commission:'Commission deducted', paid:'Paid out'};
+  var payoutMerchants=[];
+  for(var p=0;p<130;p++){
+    var gross=randInt(3000,52000);
+    var tier= rand()<0.4 ? 'Gold' : 'Standard';
+    var commissionRate= tier==='Gold' ? 0.05 : 0.08;
+    var commission=Math.round(gross*commissionRate);
+    var refund= rand()<0.25 ? randInt(0,1500) : 0;
+    var net=gross-commission-refund;
+    var stageRoll=rand();
+    var stage = stageRoll<0.10 ? 'delivered' : (stageRoll<0.25 ? 'holding' : (stageRoll<0.40 ? 'commission' : 'paid'));
+    var heldForReview = stage!=='paid' && rand()<0.09;
+    payoutMerchants.push({
+      id:'p'+p, name:genName(), tier:tier, gross:gross, commission:commission, commissionRate:commissionRate,
+      refund:refund, net:net, stage:stage, heldForReview:heldForReview,
+      holdReason: heldForReview ? pick(['Refund dispute open','Bank details need verification','Suspicious order pattern flagged']) : null,
+      manuallyEdited:false
+    });
+  }
+  var poPage=1, poPerPage=8, poQuery='', poStageFilter='All', poReviewOnly=false, activePayoutId=null;
+
+  function visiblePO(){
+    var q=poQuery.toLowerCase();
+    return payoutMerchants.filter(function(m){
+      var mq=!q || m.name.toLowerCase().indexOf(q)>-1;
+      var mf=poStageFilter==='All' || m.stage===poStageFilter;
+      var mr=!poReviewOnly || m.heldForReview;
+      return mq && mf && mr;
+    });
+  }
+  function renderPOChips(){
+    var el=document.getElementById('po-chips');
+    var opts=[['All','All stages'],['delivered','Delivered'],['holding','Holding'],['commission','Commission deducted'],['paid','Paid']];
+    el.innerHTML='';
+    opts.forEach(function(pair){
+      var chip=document.createElement('span');
+      chip.className='chip'+(pair[0]===poStageFilter?' is-active':'');
+      chip.textContent=pair[1];
+      chip.addEventListener('click', function(){ poStageFilter=pair[0]; poPage=1; renderPOChips(); syncFlowStepActive(); renderPO(); });
+      el.appendChild(chip);
+    });
+  }
+  function renderPOReviewChip(){
+    var el=document.getElementById('po-review-chips');
+    var reviewCount=payoutMerchants.filter(function(m){return m.heldForReview;}).length;
+    el.innerHTML='';
+    var chip=document.createElement('span');
+    chip.className='chip'+(poReviewOnly?' is-active':'');
+    chip.textContent='⚠ Held for review only ('+reviewCount+')';
+    chip.addEventListener('click', function(){ poReviewOnly=!poReviewOnly; poPage=1; renderPOReviewChip(); renderPO(); });
+    el.appendChild(chip);
+  }
+  function poStageBadgeHtml(m){
+    var html='<span class="po-stage-badge '+m.stage+'">'+payoutStageNames[m.stage]+'</span>';
+    if(m.heldForReview) html+='<span class="po-review-flag">⚠ Held for review</span>';
+    return html;
+  }
+  function syncFlowStepActive(){
+    document.querySelectorAll('#payout-flow-steps .flow-step').forEach(function(stepEl){
+      stepEl.classList.toggle('is-active', stepEl.dataset.stage===poStageFilter);
+    });
+  }
+  function renderPayoutFlowStats(){
+    var totalNet=payoutMerchants.reduce(function(s,m){ return s+m.net; },0);
+    var avgRate=payoutMerchants.reduce(function(s,m){ return s+m.commissionRate; },0)/payoutMerchants.length;
+    var countByStage={delivered:0,holding:0,commission:0,paid:0};
+    var paidNet=0;
+    payoutMerchants.forEach(function(m){ countByStage[m.stage]++; if(m.stage==='paid') paidNet+=m.net; });
+    document.getElementById('flow-step1-count').textContent=countByStage.delivered;
+    document.getElementById('flow-step2-count').textContent=countByStage.holding;
+    document.getElementById('flow-step3-rate').textContent=(avgRate*100).toFixed(1)+'%';
+    document.getElementById('flow-step4-amount').textContent='฿'+Math.round(paidNet/1000)+'k';
+    document.getElementById('flow-step4-count').textContent=countByStage.paid;
+  }
+  function renderPO(){
+    var all=visiblePO();
+    var totalPages=Math.max(1, Math.ceil(all.length/poPerPage));
+    if(poPage>totalPages) poPage=totalPages;
+    var pageItems=paginate(all, poPage, poPerPage);
+    var tbody=document.getElementById('po-body');
+    tbody.innerHTML='';
+    pageItems.forEach(function(m){
+      var tr=document.createElement('tr');
+      if(m.heldForReview) tr.className='flag-row';
+      tr.innerHTML='<td>'+m.name+(m.manuallyEdited?'<span class="po-corrected-tag"> ✎ corrected</span>':'')+'</td>'+
+        '<td>฿'+m.gross.toLocaleString()+'</td>'+
+        '<td>−฿'+m.commission.toLocaleString()+' ('+Math.round(m.commissionRate*100)+'%)</td>'+
+        '<td>−฿'+m.refund.toLocaleString()+'</td>'+
+        '<td><b>฿'+m.net.toLocaleString()+'</b></td>'+
+        '<td>'+poStageBadgeHtml(m)+'</td>'+
+        '<td><button class="link-back" data-managepo="'+m.id+'" style="margin-top:0;">Manage →</button></td>';
+      tbody.appendChild(tr);
+    });
+    var totalNet=payoutMerchants.reduce(function(s,m){return s+m.net;},0);
+    var reviewCount=payoutMerchants.filter(function(m){return m.heldForReview;}).length;
+    document.getElementById('po-summary').textContent = 'This batch: '+payoutMerchants.length+' merchants in the pipeline · ฿'+Math.round(totalNet/1000)+'k total value · '+reviewCount+' held for review';
+    document.getElementById('po-pageinfo').textContent='Page '+poPage+' of '+totalPages;
+    document.getElementById('po-prev').disabled=poPage<=1;
+    document.getElementById('po-next').disabled=poPage>=totalPages;
+    tbody.querySelectorAll('[data-managepo]').forEach(function(btn){
+      btn.addEventListener('click', function(){ openPayoutDetail(btn.dataset.managepo); });
+    });
+    renderPayoutFlowStats();
+    renderFinanceDashboard();
+  }
+  document.getElementById('po-search').addEventListener('input', function(e){ poQuery=e.target.value; poPage=1; renderPO(); });
+  document.getElementById('po-prev').addEventListener('click', function(){ if(poPage>1){poPage--; renderPO();} });
+  document.getElementById('po-next').addEventListener('click', function(){ poPage++; renderPO(); });
+
+  document.querySelectorAll('#payout-flow-steps .flow-step').forEach(function(stepEl){
+    stepEl.addEventListener('click', function(){
+      poStageFilter=stepEl.dataset.stage;
+      poPage=1;
+      renderPOChips();
+      syncFlowStepActive();
+      renderPO();
+    });
+  });
+
+  function openPayoutDetail(id){
+    activePayoutId=id;
+    document.getElementById('po-list-view').style.display='none';
+    document.getElementById('po-detail-view').style.display='block';
+    renderPayoutDetail(false);
+  }
+  function renderPayoutDetail(editMode){
+    var m=payoutMerchants.filter(function(x){ return x.id===activePayoutId; })[0];
+    var el=document.getElementById('po-detail-content');
+    if(!m){ el.innerHTML=''; return; }
+
+    if(!editMode){
+      var html =
+        '<div class="dispute-detail-card">'+
+        '<div class="dispute-detail-row"><span>Merchant</span><b>'+m.name+' ('+m.tier+')</b></div>'+
+        '<div class="dispute-detail-row"><span>Gross sales</span><b>฿'+m.gross.toLocaleString()+'</b></div>'+
+        '<div class="dispute-detail-row"><span>Commission</span><b>−฿'+m.commission.toLocaleString()+' ('+Math.round(m.commissionRate*100)+'%)</b></div>'+
+        '<div class="dispute-detail-row"><span>Refunds</span><b>−฿'+m.refund.toLocaleString()+'</b></div>'+
+        '<div class="dispute-detail-row"><span>Net payout</span><b>฿'+m.net.toLocaleString()+'</b></div>'+
+        '<div class="dispute-detail-row"><span>Stage</span><b>'+payoutStageNames[m.stage]+'</b></div>'+
+        '</div>';
+      if(m.heldForReview){
+        html += '<div class="dispute-evidence">⚠ Held for review: '+m.holdReason+'. This merchant will not progress to the next automated stage until cleared.</div>';
+      }
+      if(m.manuallyEdited){
+        html += '<p class="po-corrected-tag">✎ This payout was manually corrected by an admin.</p>';
+      }
+      html += '<p class="dispute-resolve-title" style="margin-top:16px;">If the automation got this wrong</p>'+
+        '<div class="dispute-resolve-actions">'+
+        '<button class="btn-escalate" id="po-edit-btn">Edit payout →</button>'+
+        (m.heldForReview ? '<button class="btn-merchant" data-clearreview>Clear review flag</button>' : '<button class="btn-refund" data-flagreview>Flag for review</button>')+
+        '</div>';
+      el.innerHTML=html;
+      document.getElementById('po-edit-btn').addEventListener('click', function(){ renderPayoutDetail(true); });
+      var clearBtn=el.querySelector('[data-clearreview]');
+      if(clearBtn) clearBtn.addEventListener('click', function(){ m.heldForReview=false; m.holdReason=null; renderPayoutDetail(false); renderPO(); });
+      var flagBtn=el.querySelector('[data-flagreview]');
+      if(flagBtn) flagBtn.addEventListener('click', function(){ m.heldForReview=true; m.holdReason='Manually flagged by admin'; renderPayoutDetail(false); renderPO(); });
+    } else {
+      var stageOptionsHtml=Object.keys(payoutStageNames).map(function(k){ return '<option value="'+k+'"'+(k===m.stage?' selected':'')+'>'+payoutStageNames[k]+'</option>'; }).join('');
+      var html2 =
+        '<div class="po-edit-form">'+
+        '<div class="wiz-field"><label>Gross sales (฿)</label><input type="number" id="pe-gross" value="'+m.gross+'"></div>'+
+        '<div class="wiz-field"><label>Commission (฿)</label><input type="number" id="pe-commission" value="'+m.commission+'"></div>'+
+        '<div class="wiz-field"><label>Refunds (฿)</label><input type="number" id="pe-refund" value="'+m.refund+'"></div>'+
+        '<div class="wiz-field"><label>Stage</label><select id="pe-stage" class="search-input">'+stageOptionsHtml+'</select></div>'+
+        '<div class="po-edit-actions"><button class="po-cancel-btn" id="pe-cancel">Cancel</button><button class="po-save-btn" id="pe-save">Save correction</button></div>'+
+        '</div>';
+      el.innerHTML=html2;
+      document.getElementById('pe-cancel').addEventListener('click', function(){ renderPayoutDetail(false); });
+      document.getElementById('pe-save').addEventListener('click', function(){
+        var g=parseFloat(document.getElementById('pe-gross').value)||0;
+        var c=parseFloat(document.getElementById('pe-commission').value)||0;
+        var r=parseFloat(document.getElementById('pe-refund').value)||0;
+        var st=document.getElementById('pe-stage').value;
+        m.gross=g; m.commission=c; m.refund=r; m.net=g-c-r; m.stage=st; m.manuallyEdited=true;
+        renderPayoutDetail(false);
+        renderPO();
+      });
+    }
+  }
+  document.getElementById('po-detail-back').addEventListener('click', function(){
+    document.getElementById('po-detail-view').style.display='none';
+    document.getElementById('po-list-view').style.display='block';
+  });
+
+  function renderFinanceDashboard(){
+    var paidMerchants=payoutMerchants.filter(function(m){ return m.stage==='paid'; });
+    var outstandingMerchants=payoutMerchants.filter(function(m){ return m.stage!=='paid'; });
+    var paidAmount=paidMerchants.reduce(function(s,m){ return s+m.net; },0);
+    var outstandingAmount=outstandingMerchants.reduce(function(s,m){ return s+m.net; },0);
+    var commissionCollected=payoutMerchants.filter(function(m){ return m.stage==='commission'||m.stage==='paid'; }).reduce(function(s,m){ return s+m.commission; },0);
+    var avgCommissionRate=payoutMerchants.reduce(function(s,m){ return s+m.commissionRate; },0)/payoutMerchants.length;
+    var heldMerchants=payoutMerchants.filter(function(m){ return m.heldForReview; });
+    var heldAmount=heldMerchants.reduce(function(s,m){ return s+m.net; },0);
+
+    document.getElementById('fd-paid-amount').textContent='฿'+Math.round(paidAmount).toLocaleString();
+    document.getElementById('fd-paid-count').textContent=paidMerchants.length+' merchants';
+    document.getElementById('fd-outstanding-amount').textContent='฿'+Math.round(outstandingAmount).toLocaleString();
+    document.getElementById('fd-outstanding-count').textContent=outstandingMerchants.length+' merchants';
+    document.getElementById('fd-commission-amount').textContent='฿'+Math.round(commissionCollected).toLocaleString();
+    document.getElementById('fd-commission-rate').textContent=(avgCommissionRate*100).toFixed(1)+'% blended avg';
+    document.getElementById('fd-held-amount').textContent='฿'+Math.round(heldAmount).toLocaleString();
+    document.getElementById('fd-held-count').textContent=heldMerchants.length+' merchant'+(heldMerchants.length===1?'':'s');
+
+    var tiers=['Gold','Standard'];
+    var segBody=document.getElementById('fd-segment-body');
+    segBody.innerHTML='';
+    tiers.forEach(function(tier){
+      var tierMerchants=payoutMerchants.filter(function(m){ return m.tier===tier; });
+      var tierPaid=tierMerchants.filter(function(m){ return m.stage==='paid'; }).reduce(function(s,m){ return s+m.net; },0);
+      var tierOutstanding=tierMerchants.filter(function(m){ return m.stage!=='paid'; }).reduce(function(s,m){ return s+m.net; },0);
+      var tierAvgRate=tierMerchants.length ? tierMerchants.reduce(function(s,m){ return s+m.commissionRate; },0)/tierMerchants.length : 0;
+      var tr=document.createElement('tr');
+      tr.innerHTML='<td>'+(tier==='Gold' ? '<span class="badge badge-gold">Gold</span>' : '<span class="badge badge-standard">Standard</span>')+'</td>'+
+        '<td>'+tierMerchants.length+'</td>'+
+        '<td>฿'+Math.round(tierPaid).toLocaleString()+'</td>'+
+        '<td>฿'+Math.round(tierOutstanding).toLocaleString()+'</td>'+
+        '<td>'+(tierAvgRate*100).toFixed(1)+'%</td>';
+      segBody.appendChild(tr);
+    });
+
+    var stageOrder=['delivered','holding','commission','paid'];
+    var stageValues={}, maxVal=0;
+    stageOrder.forEach(function(st){
+      var val=payoutMerchants.filter(function(m){ return m.stage===st; }).reduce(function(s,m){ return s+m.net; },0);
+      stageValues[st]=val;
+      if(val>maxVal) maxVal=val;
+    });
+    var barsWrap=document.getElementById('fd-stage-bars');
+    barsWrap.innerHTML='';
+    stageOrder.forEach(function(st){
+      var val=stageValues[st];
+      var pct=maxVal>0 ? Math.max(4,Math.round(val/maxVal*100)) : 4;
+      var bar=document.createElement('div');
+      bar.className='bar'+(st==='paid' ? ' is-peak' : '');
+      bar.style.height=pct+'%';
+      bar.innerHTML='<span class="bar-value">฿'+Math.round(val/1000)+'k</span><span class="bar-label">'+payoutStageNames[st]+'</span>';
+      barsWrap.appendChild(bar);
+    });
+  }
+
+  renderPOChips();
+  renderPOReviewChip();
+  renderPO();
+
+})();
+</script>
+</body>
+</html>
