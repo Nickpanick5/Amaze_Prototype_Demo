@@ -1,0 +1,2218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amaze — Personalization Engine Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0F1B33;
+    --ink-soft:#4B5568;
+    --muted:#8A93A6;
+    --base:#F3F5F9;
+    --surface:#FFFFFF;
+    --line:#E4E8F0;
+    --brand:#3451FF;
+    --brand-soft:#EAEDFF;
+    --live:#00B894;
+    --live-soft:#E4F9F3;
+    --urgency:#FF5252;
+    --urgency-soft:#FFEAEA;
+    --gold:#B9860C;
+    --gold-soft:#FBF2DC;
+    --bronze:#B5651D;
+    --bronze-soft:#F7EBDE;
+    --silver:#6B7686;
+    --silver-soft:#EEF0F4;
+    --shadow-sm:0 1px 2px rgba(15,27,51,.05);
+    --shadow-md:0 14px 30px -18px rgba(15,27,51,.35);
+    --font-display:'Space Grotesk', system-ui, sans-serif;
+    --font-body:'Inter', system-ui, sans-serif;
+    --font-mono:'IBM Plex Mono', 'SFMono-Regular', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--base); font-family:var(--font-body); color:var(--ink); -webkit-font-smoothing:antialiased;}
+
+  .app-header{padding:22px 24px 18px; max-width:1180px; margin:0 auto; text-align:center;}
+  .app-eyebrow{font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--brand); margin:0 0 6px;}
+  .app-title{font-family:var(--font-display); font-size:26px; font-weight:700; margin:0 0 4px; letter-spacing:-0.01em;}
+  .app-sub{font-size:14px; color:var(--ink-soft); margin:0 0 8px; max-width:680px; line-height:1.5;}
+  .app-scale-note{font-size:12px; color:var(--brand); font-weight:600; margin:0 0 18px; display:flex; align-items:center; gap:6px;}
+  .app-switch{display:inline-flex; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:4px; gap:4px;}
+  .app-switch button{
+    font-family:var(--font-display); font-size:14px; font-weight:600; border:none; background:transparent;
+    color:var(--ink-soft); padding:9px 20px; border-radius:999px; cursor:pointer; transition:background .2s ease, color .2s ease;
+  }
+  .app-switch button.is-active{background:var(--ink); color:#fff;}
+  .app-stage{max-width:1180px; margin:0 auto 60px; padding:0 24px;}
+  .view{display:none;}
+  .view.is-active{display:block;}
+
+  /* ===== shared: search / chips / pagination ===== */
+  .search-input{width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-family:var(--font-body); font-size:12.5px; background:var(--surface); color:var(--ink);}
+  .search-input:focus{outline:2px solid var(--brand); outline-offset:1px;}
+  .chip-row{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+  .chip{font-family:var(--font-mono); font-size:10.5px; font-weight:600; padding:5px 11px; border-radius:999px; background:var(--base); color:var(--ink-soft); cursor:pointer; border:1px solid var(--line); user-select:none;}
+  .chip.is-active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .table-toolbar{display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap;}
+  .table-toolbar .search-input{max-width:260px;}
+  .table-summary{font-size:11.5px; color:var(--ink-soft); margin:10px 0 0;}
+  .pagination{display:flex; align-items:center; justify-content:space-between; margin-top:12px; font-size:11.5px; color:var(--ink-soft);}
+  .pagination button{background:var(--base); border:1px solid var(--line); border-radius:8px; padding:6px 12px; cursor:pointer; font-family:var(--font-body); font-size:12px; color:var(--ink);}
+  .pagination button:disabled{opacity:.4; cursor:not-allowed;}
+  table{width:100%; border-collapse:collapse; margin-top:6px;}
+  th{text-align:left; font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line);}
+  td{padding:11px 10px; font-size:12.5px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .badge{font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap;}
+  .badge-verified{background:var(--live-soft); color:#046C56;}
+  .badge-approved{background:var(--brand-soft); color:var(--brand);}
+  .badge-rejected{background:var(--urgency-soft); color:var(--urgency);}
+  .flag-row{background:var(--urgency-soft);}
+
+  /* ===== SHOPPER APP (phone frame) ===== */
+  .ma-layout{display:flex; justify-content:center;}
+  .ma-phone-col{display:flex; flex-direction:column; align-items:center;}
+  .ms-toggle-row{display:flex; gap:8px; margin-bottom:14px; width:100%;}
+  .ms-toggle-btn{flex:1; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:10px 12px; font-family:var(--font-display); font-weight:600; font-size:11.5px; color:var(--ink); cursor:pointer; text-align:center; box-shadow:var(--shadow-sm);}
+  .ms-toggle-btn.is-active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .ma-phone{background:var(--ink); border-radius:40px; padding:14px; box-shadow:0 30px 60px -20px rgba(15,27,51,.35); width:340px;}
+  .ma-notch{height:22px; display:flex; justify-content:center; align-items:flex-end; margin-bottom:6px;}
+  .ma-notch::after{content:''; width:70px; height:14px; background:#000; border-radius:10px;}
+  .ma-screen{background:var(--surface); border-radius:28px; height:640px; overflow:hidden; display:flex; flex-direction:column; position:relative;}
+  .ma-topbar{padding:18px 18px 12px; border-bottom:1px solid var(--line);}
+  .ma-hello{font-size:12px; color:var(--muted); margin:0 0 2px;}
+  .ma-shopname{font-family:var(--font-display); font-weight:700; font-size:17px; margin:0; display:flex; align-items:center; gap:8px;}
+  .ma-panels{flex:1; overflow-y:auto; padding:16px 18px 90px;}
+  .ma-panel{display:none;}
+  .ma-panel.is-active{display:block; animation:fadein .25s ease;}
+  @keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+  .section-label{font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:18px 0 8px;}
+  .section-label:first-child{margin-top:0;}
+
+  .segctrl{display:flex; gap:4px; background:var(--base); border-radius:10px; padding:3px; margin-top:2px;}
+  .segctrl button{flex:1; border:none; background:none; font-family:var(--font-display); font-weight:600; font-size:10.5px; padding:8px 4px; border-radius:8px; cursor:pointer; color:var(--ink-soft);}
+  .segctrl button.is-active{background:var(--surface); color:var(--ink); box-shadow:var(--shadow-sm);}
+  .algo-banner{margin-top:10px; background:var(--brand-soft); color:var(--brand); font-size:11.5px; font-weight:600; padding:9px 11px; border-radius:10px; line-height:1.4;}
+  .autocart-banner{margin-top:10px; background:linear-gradient(135deg, var(--gold-soft), #FFF4DC); border:1px solid var(--gold); border-radius:12px; padding:12px; font-size:11.5px; color:var(--ink);}
+  .autocart-banner b{display:block; font-family:var(--font-display); font-size:12.5px; margin-bottom:3px;}
+  .autocart-banner .link-cta{color:var(--brand); font-weight:700; font-size:11px; margin-top:7px; display:inline-block; cursor:pointer; background:none; border:none; padding:0;}
+
+  .rec-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;}
+  .rec-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px; box-shadow:var(--shadow-sm);}
+  .rec-thumb{height:56px; border-radius:8px; margin-bottom:7px; display:flex; align-items:center; justify-content:center; font-size:22px;}
+  .rec-name{font-size:11px; font-weight:600; line-height:1.3;}
+  .rec-price{font-family:var(--font-mono); font-size:11.5px; font-weight:600; margin-top:2px;}
+  .rec-tag{font-size:9px; color:var(--brand); margin-top:4px; font-weight:600; line-height:1.3;}
+
+  .ship-progress{background:var(--base); border-radius:12px; padding:12px; margin-bottom:12px;}
+  .ship-progress-text{font-size:11.5px; font-weight:600; margin-bottom:7px;}
+  .ship-bar-bg{height:7px; background:var(--line); border-radius:99px; overflow:hidden;}
+  .ship-bar-fill{height:100%; background:linear-gradient(90deg, var(--live), #34D6B4); border-radius:99px; transition:width .3s ease;}
+
+  .cart-item{display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px;}
+  .cart-item.auto{border-color:var(--gold); background:var(--gold-soft);}
+  .cart-item-name{font-size:12px; font-weight:600;}
+  .cart-item-meta{font-size:9.5px; color:var(--ink-soft); margin-top:2px;}
+  .cart-item-auto-badge{font-size:8.5px; font-weight:700; color:var(--gold); display:block; margin-top:2px; max-width:170px; line-height:1.3;}
+  .cart-item-price{font-family:var(--font-mono); font-size:12px; font-weight:600; text-align:right;}
+  .cart-item-remove{background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer; margin-left:8px;}
+  .cart-total-row{display:flex; justify-content:space-between; font-size:13px; font-weight:700; padding:10px 2px; border-top:1px dashed var(--line); margin-top:4px;}
+  .cart-total-row span:last-child{font-family:var(--font-mono);}
+
+  .crosssell-row{display:flex; gap:8px; overflow-x:auto; margin:10px 0 4px; padding-bottom:2px;}
+  .crosssell-chip{flex-shrink:0; background:var(--base); border:1px dashed var(--line); border-radius:10px; padding:8px 10px; font-size:10px; text-align:center; width:78px;}
+  .crosssell-chip .cs-icon{font-size:18px;}
+  .crosssell-chip .cs-price{font-family:var(--font-mono); font-size:9.5px; color:var(--ink-soft); margin-top:2px;}
+  .crosssell-chip button{display:block; margin:5px auto 0; background:var(--brand); color:#fff; border:none; border-radius:6px; font-size:9px; padding:3px 8px; cursor:pointer; font-family:var(--font-display); font-weight:600;}
+
+  .home-search{position:relative;}
+  .home-search input{width:100%; border:1px solid var(--line); border-radius:12px; padding:11px 14px 11px 36px; font-family:var(--font-body); font-size:12.5px; background:var(--base); color:var(--ink);}
+  .home-search svg{position:absolute; left:11px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--muted);}
+
+  .price-drop-banner{margin-top:10px; background:linear-gradient(135deg, var(--live-soft), #D7F6EC); border:1px solid var(--live); border-radius:12px; padding:12px; font-size:11.5px; color:var(--ink);}
+  .price-drop-banner b{display:block; font-family:var(--font-display); font-size:12.5px; margin-bottom:3px; color:#046C56;}
+
+  .pdp-back{background:none; border:none; color:var(--brand); font-family:var(--font-display); font-weight:600; font-size:12px; cursor:pointer; padding:0; margin-bottom:12px;}
+  .pdp-image{height:150px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:52px; margin-bottom:12px;}
+  .pdp-name{font-family:var(--font-display); font-weight:700; font-size:15px; line-height:1.35;}
+  .pdp-price{font-family:var(--font-mono); font-size:18px; font-weight:700; margin:5px 0 10px; color:var(--brand);}
+  .pdp-social{display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;}
+  .pdp-social-badge{font-size:10px; font-weight:600; padding:5px 10px; border-radius:999px; background:var(--urgency-soft); color:var(--urgency); display:flex; align-items:center; gap:4px;}
+  .pdp-social-badge.sold{background:var(--gold-soft); color:var(--gold);}
+  .pdp-seller-card{background:var(--base); border-radius:12px; padding:12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .pdp-seller-name{font-size:12px; font-weight:700;}
+  .pdp-seller-meta{font-size:10px; color:var(--ink-soft); margin-top:2px;}
+  .pdp-desc{font-size:11.5px; color:var(--ink-soft); line-height:1.6; margin-bottom:14px;}
+  .pdp-qty{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+  .pdp-qty button{width:30px; height:30px; border-radius:8px; border:1px solid var(--line); background:var(--surface); font-size:14px; cursor:pointer;}
+  .pdp-qty span{font-family:var(--font-mono); font-weight:600; font-size:13px; min-width:20px; text-align:center;}
+  .pdp-actions{display:flex; gap:8px;}
+  .pdp-actions .checkout-btn{margin-top:0;}
+  .pdp-wish-btn{width:46px; flex-shrink:0; border:1px solid var(--line); border-radius:12px; background:var(--surface); font-size:16px; cursor:pointer;}
+  .pdp-wish-btn.is-active{border-color:var(--urgency); background:var(--urgency-soft); color:var(--urgency);}
+
+  .voucher-banner{background:var(--live-soft); color:#046C56; border-radius:10px; padding:9px 11px; font-size:11px; font-weight:600; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+
+  .addon-row{display:flex; justify-content:space-between; align-items:center; background:var(--base); border-radius:10px; padding:10px 12px; margin:10px 0; font-size:11.5px;}
+  .addon-row-label{font-weight:600;}
+  .addon-row-sub{font-size:9.5px; color:var(--ink-soft); font-weight:400; margin-top:2px;}
+  .toggle-switch{width:36px; height:21px; border-radius:99px; background:var(--line); position:relative; cursor:pointer; flex-shrink:0; border:none;}
+  .toggle-switch::after{content:''; position:absolute; width:17px; height:17px; border-radius:50%; background:#fff; top:2px; left:2px; transition:left .18s ease; box-shadow:0 1px 2px rgba(0,0,0,.2);}
+  .toggle-switch.is-on{background:var(--brand);}
+  .toggle-switch.is-on::after{left:17px;}
+
+  .progress-steps{display:flex; align-items:center; margin-bottom:16px;}
+  .pstep{display:flex; flex-direction:column; align-items:center; flex:1; position:relative;}
+  .pstep-dot{width:20px; height:20px; border-radius:50%; background:var(--base); border:2px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--muted); z-index:1;}
+  .pstep.done .pstep-dot{background:var(--brand); border-color:var(--brand); color:#fff;}
+  .pstep.current .pstep-dot{border-color:var(--brand); color:var(--brand); font-weight:700;}
+  .pstep-label{font-size:8.5px; color:var(--muted); margin-top:4px;}
+  .pstep.done .pstep-label, .pstep.current .pstep-label{color:var(--ink); font-weight:600;}
+  .pstep-line{position:absolute; top:9px; left:-50%; width:100%; height:2px; background:var(--line); z-index:0;}
+  .pstep.done .pstep-line{background:var(--brand);}
+  .pstep:first-child .pstep-line{display:none;}
+
+  .chat-fab{position:absolute; bottom:100px; right:14px; width:44px; height:44px; border-radius:50%; background:var(--ink); color:#fff; border:none; font-size:18px; cursor:pointer; box-shadow:0 8px 18px -6px rgba(15,27,51,.5); z-index:5;}
+  .chat-panel{position:absolute; bottom:150px; right:14px; left:14px; background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow-md); padding:12px; z-index:6; display:none;}
+  .chat-panel.is-open{display:block;}
+  .chat-panel-title{font-family:var(--font-display); font-weight:700; font-size:12px; margin-bottom:8px;}
+  .chat-log{max-height:140px; overflow-y:auto; margin-bottom:8px;}
+  .chat-msg{font-size:11px; padding:7px 9px; border-radius:9px; margin-bottom:6px; max-width:85%; line-height:1.4;}
+  .chat-msg.bot{background:var(--base); color:var(--ink);}
+  .chat-msg.user{background:var(--brand); color:#fff; margin-left:auto;}
+  .chat-quick-replies{display:flex; flex-direction:column; gap:5px;}
+  .chat-quick-replies button{text-align:left; background:var(--base); border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:10.5px; cursor:pointer; color:var(--ink);}
+
+  .checkout-btn{width:100%; background:var(--ink); color:#fff; border:none; border-radius:12px; padding:13px; font-family:var(--font-display); font-weight:700; font-size:13px; cursor:pointer; margin-top:10px;}
+  .link-back{background:none; border:none; color:var(--brand); font-family:var(--font-display); font-weight:600; font-size:11.5px; cursor:pointer; padding:0; margin-top:12px;}
+
+  /* Ported from the Part 4 mockup for visual consistency — same order/stepper language on both sides */
+  .order-parent{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:var(--shadow-sm); margin-bottom:10px;}
+  .order-parent-top{display:flex; justify-content:space-between; align-items:flex-start;}
+  .order-id{font-family:var(--font-mono); font-size:11px; color:var(--muted);}
+  .order-total{font-family:var(--font-mono); font-weight:600; font-size:15px; text-align:right;}
+  .order-meta{font-size:10.5px; color:var(--ink-soft); margin-top:2px;}
+  .fork{position:relative; margin:16px 0 0 8px; padding-left:20px; border-left:2px dashed var(--line);}
+  .fork-item{position:relative; margin-bottom:12px; background:var(--base); border:1px solid var(--line); border-radius:12px; padding:12px;}
+  .fork-item:last-child{margin-bottom:0;}
+  .fork-item::before{content:''; position:absolute; left:-20px; top:16px; width:18px; height:2px; background:var(--line);}
+  .fork-head{display:flex; justify-content:space-between; align-items:flex-start;}
+  .fork-merchant{font-size:12.5px; font-weight:700;}
+  .fork-logistics{font-size:10px; color:var(--ink-soft); display:flex; align-items:center; gap:4px; margin-top:3px;}
+  .fork-logistics svg{width:12px; height:12px; flex-shrink:0;}
+  .fork-items{font-size:11px; color:var(--ink-soft); margin-top:6px;}
+  .stepper{display:flex; align-items:flex-start; margin-top:12px;}
+  .step{display:flex; flex-direction:column; align-items:center; flex:1; position:relative;}
+  .step-dot{width:10px; height:10px; border-radius:50%; background:var(--surface); border:2px solid var(--line); z-index:1;}
+  .step.done .step-dot{background:var(--brand); border-color:var(--brand);}
+  .step.current .step-dot{border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft);}
+  .step-label{font-size:8.5px; color:var(--muted); margin-top:5px; text-align:center; line-height:1.2;}
+  .step.done .step-label, .step.current .step-label{color:var(--ink); font-weight:600;}
+  .step-line{position:absolute; top:4px; left:-50%; width:100%; height:2px; background:var(--line); z-index:0;}
+  .step.done .step-line{background:var(--brand);}
+  .step:first-child .step-line{display:none;}
+  .sla-line{display:flex; justify-content:space-between; align-items:center; margin-top:11px; font-size:10px; padding-top:9px; border-top:1px dashed var(--line);}
+  .sla-ok{color:var(--live); font-weight:700;}
+
+  .shop-ord-row{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px; cursor:pointer;}
+  .shop-ord-row.is-new{border-color:var(--brand); background:var(--brand-soft);}
+  .shop-ord-top{display:flex; justify-content:space-between; align-items:center;}
+  .shop-ord-id{font-family:var(--font-mono); font-size:12px; font-weight:600;}
+  .shop-ord-status{font-size:9.5px; font-weight:700; padding:3px 8px; border-radius:999px; white-space:nowrap;}
+  .shop-ord-status.progress{background:var(--brand-soft); color:var(--brand);}
+  .shop-ord-status.done{background:var(--live-soft); color:#046C56;}
+  .shop-ord-meta{font-size:10px; color:var(--ink-soft); margin-top:4px;}
+  .shop-ord-bottom{display:flex; justify-content:space-between; align-items:center; margin-top:6px;}
+  .shop-ord-total{font-family:var(--font-mono); font-size:12px; font-weight:600;}
+  .shop-ord-split-tag{font-size:9px; color:var(--gold); font-weight:700;}
+
+  .bnpl-option{display:flex; justify-content:space-between; align-items:center; border:1px solid var(--line); border-radius:10px; padding:11px 12px; margin-bottom:8px; cursor:pointer; font-size:11.5px;}
+  .bnpl-option.is-selected{border-color:var(--brand); background:var(--brand-soft);}
+  .bnpl-radio{width:14px; height:14px; border-radius:50%; border:2px solid var(--line); flex-shrink:0;}
+  .bnpl-option.is-selected .bnpl-radio{border-color:var(--brand); background:radial-gradient(var(--brand) 0 40%, transparent 42%);}
+
+  .thankyou-wrap{text-align:center; padding:6px 4px;}
+  .thankyou-check{width:52px; height:52px; border-radius:50%; background:var(--live-soft); color:var(--live); display:flex; align-items:center; justify-content:center; margin:6px auto 12px; font-size:26px;}
+  .thankyou-card{background:var(--base); border-radius:12px; padding:12px; text-align:left; margin-top:12px; font-size:11.5px;}
+  .thankyou-card b{display:block; font-family:var(--font-display); font-size:12.5px; margin-bottom:3px;}
+
+  .wl-item{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px; cursor:pointer;}
+  .wl-top{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .wl-name{font-size:12px; font-weight:600;}
+  .wl-target{font-size:10px; color:var(--ink-soft); margin-top:2px;}
+  .wl-status{font-size:9.5px; font-weight:700; padding:3px 8px; border-radius:999px; white-space:nowrap;}
+  .wl-status.watching{background:var(--base); color:var(--ink-soft);}
+  .wl-status.matched{background:var(--live-soft); color:#046C56;}
+  .wl-status.auction{background:var(--urgency-soft); color:var(--urgency);}
+  .wl-mini-bar-bg{height:5px; background:var(--line); border-radius:99px; overflow:hidden; margin-top:7px;}
+  .wl-mini-bar-fill{height:100%; border-radius:99px; background:linear-gradient(90deg, var(--brand), #7C90FF);}
+  .wl-add-form{display:flex; gap:6px; margin-top:10px;}
+  .wl-add-form input{flex:1; border:1px solid var(--line); border-radius:8px; padding:8px 9px; font-size:11px; min-width:0;}
+  .wl-add-form button{background:var(--brand); color:#fff; border:none; border-radius:8px; padding:0 12px; font-family:var(--font-display); font-weight:600; font-size:11px; cursor:pointer; flex-shrink:0;}
+
+  .wl-detail-back{background:none; border:none; color:var(--brand); font-family:var(--font-display); font-weight:600; font-size:12px; cursor:pointer; padding:0; margin-bottom:14px;}
+  .wl-stage-badge{font-size:10px; font-weight:700; padding:4px 10px; border-radius:999px; display:inline-block; margin-bottom:12px;}
+  .wl-stage-badge.gathering{background:var(--base); color:var(--ink-soft);}
+  .wl-stage-badge.auction{background:var(--urgency-soft); color:var(--urgency);}
+  .wl-stage-badge.matched{background:var(--live-soft); color:#046C56;}
+  .wl-demand-card{background:var(--base); border-radius:12px; padding:14px;}
+  .wl-demand-text{display:flex; justify-content:space-between; font-size:11.5px; font-weight:600; margin-bottom:6px;}
+  .wl-demand-bar-bg{height:8px; background:var(--line); border-radius:99px; overflow:hidden;}
+  .wl-demand-bar-fill{height:100%; border-radius:99px; background:linear-gradient(90deg, var(--brand), #7C90FF); transition:width .3s ease;}
+  .wl-demand-note{font-size:10.5px; color:var(--ink-soft); margin-top:8px; line-height:1.5;}
+  .wl-auction-card{background:linear-gradient(135deg, var(--ink), #1E2E52); color:#fff; border-radius:12px; padding:16px; text-align:center;}
+  .wl-auction-timer{font-family:var(--font-mono); font-size:26px; font-weight:700; margin:4px 0;}
+  .wl-auction-sub{font-size:11px; opacity:.75;}
+  .wl-auction-meta{display:flex; justify-content:center; gap:18px; margin-top:12px; font-size:11px;}
+  .wl-match-card{background:var(--live-soft); border-radius:12px; padding:16px;}
+  .wl-match-price{font-family:var(--font-mono); font-size:22px; font-weight:700; color:#046C56;}
+  .wl-match-meta{font-size:11.5px; color:var(--ink); margin-top:6px; line-height:1.6;}
+
+  .member-tier-badge{font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; background:var(--gold-soft); color:var(--gold); display:inline-flex; align-items:center; gap:3px;}
+  .tier-ladder{display:flex; justify-content:space-between; margin-bottom:10px;}
+  .tier-step{font-size:10px; font-weight:600; color:var(--muted); text-align:center; flex:1;}
+  .tier-step.is-current{color:var(--gold); font-weight:700;}
+  .tier-perks{margin:10px 0 0; padding-left:18px; font-size:11.5px; color:var(--ink-soft); line-height:1.7;}
+  .tier-track{background:var(--base); border-radius:14px; padding:16px; border:1px solid var(--line);}
+  .kv-row{display:flex; justify-content:space-between; font-size:12.5px; padding:8px 0; border-bottom:1px solid var(--line);}
+  .kv-row:last-child{border-bottom:none;}
+  .kv-row b{font-family:var(--font-mono);}
+
+  .tier-benefit-card{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--line); border-radius:12px; padding:13px 14px; margin-bottom:10px;}
+  .tier-benefit-card.is-current{border-color:var(--brand); box-shadow:var(--shadow-sm);}
+  .tier-benefit-card.is-current{border-left-width:4px;}
+  .tier-benefit-card.tier-bronze{border-left-color:var(--bronze);}
+  .tier-benefit-card.tier-silver{border-left-color:var(--silver);}
+  .tier-benefit-card.tier-gold{border-left-color:var(--gold);}
+  .tier-benefit-card.tier-platinum{border-left-color:var(--brand);}
+  .tier-benefit-head{display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:2px;}
+  .tier-benefit-name{font-family:var(--font-display); font-weight:700; font-size:13px; display:flex; align-items:center; gap:6px;}
+  .tier-benefit-range{font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); white-space:nowrap;}
+  .tier-benefit-current-tag{font-size:8.5px; font-weight:700; color:var(--brand); background:var(--brand-soft); padding:2px 7px; border-radius:999px;}
+
+  .ma-tabbar{position:absolute; bottom:0; left:0; right:0; background:var(--surface); border-top:1px solid var(--line); display:flex; padding:8px 6px 12px;}
+  .ma-tab{flex:1; border:none; background:none; display:flex; flex-direction:column; align-items:center; gap:4px; font-family:var(--font-body); font-size:10px; color:var(--muted); cursor:pointer; padding:4px 0;}
+  .ma-tab.is-active{color:var(--brand); font-weight:600;}
+  .ma-tab svg{width:20px; height:20px;}
+
+  .ma-side-note{padding-top:8px; font-size:12.5px; color:var(--ink-soft); line-height:1.6; max-width:420px;}
+  .ma-side-note h3{font-family:var(--font-display); font-size:15px; margin:18px 0 6px;}
+  .ma-side-note h3:first-child{margin-top:0;}
+
+  /* ===== GROWTH & PERSONALIZATION CONSOLE ===== */
+  .ac-layout{display:grid; grid-template-columns:210px 1fr; gap:0; background:var(--surface); border-radius:20px; overflow:hidden; border:1px solid var(--line); min-height:640px; box-shadow:var(--shadow-md);}
+  @media (max-width:760px){ .ac-layout{grid-template-columns:1fr;} .ac-nav{display:flex; overflow-x:auto;} }
+  .ac-nav{background:var(--ink); padding:20px 12px;}
+  .ac-nav-brand{font-family:var(--font-display); color:#fff; font-weight:700; font-size:14px; padding:0 10px 2px;}
+  .ac-nav-tag{font-family:var(--font-mono); font-size:10px; color:#6E7DA8; padding:0 10px 16px; display:block;}
+  .ac-nav button{display:flex; align-items:center; gap:9px; width:100%; text-align:left; background:none; border:none; color:#B7C0D6; font-family:var(--font-body); font-size:13px; padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:2px;}
+  .ac-nav button.is-active{background:rgba(255,255,255,.1); color:#fff; font-weight:600;}
+  .ac-nav svg{width:16px; height:16px; flex-shrink:0;}
+  .ac-panels{padding:26px 28px;}
+  .ac-panel{display:none;}
+  .ac-panel.is-active{display:block; animation:fadein .25s ease;}
+  .ac-panel-title{font-family:var(--font-display); font-size:18px; font-weight:700; margin:0 0 4px;}
+  .ac-panel-sub{font-size:13px; color:var(--ink-soft); margin:0 0 4px; max-width:640px; line-height:1.5;}
+  .section-title{font-family:var(--font-display); font-weight:700; font-size:14px; margin:26px 0 4px;}
+  .section-title:first-of-type{margin-top:18px;}
+  .section-sub{font-size:11.5px; color:var(--ink-soft); margin:0 0 12px;}
+
+  .kpi-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
+  @media (max-width:700px){ .kpi-grid{grid-template-columns:1fr 1fr;} }
+  .kpi-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow-sm);}
+  .kpi-label{font-size:11.5px; color:var(--ink-soft);}
+  .kpi-num{font-family:var(--font-mono); font-size:22px; font-weight:600; margin:6px 0 2px;}
+  .kpi-spark{display:block; margin:2px 0 6px;}
+  .kpi-trend{font-size:11px; font-weight:600;}
+  .kpi-trend.up{color:var(--live);}
+
+  .chart-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px 22px 34px; margin-top:16px; box-shadow:var(--shadow-sm);}
+  .chart-title{font-family:var(--font-display); font-weight:700; font-size:14px; margin:0 0 2px;}
+  .chart-sub{font-size:11.5px; color:var(--ink-soft); margin:0 0 20px;}
+  .bars{display:flex; align-items:flex-end; gap:14px; height:120px; padding:0 4px;}
+  .bar{flex:1; background:linear-gradient(180deg, var(--brand), #7C90FF); border-radius:6px 6px 2px 2px; position:relative; min-height:4px;}
+  .bar.is-peak{background:linear-gradient(180deg, var(--gold), #E0B84A);}
+  .bar-value{position:absolute; top:-20px; left:0; right:0; text-align:center; font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); white-space:nowrap;}
+  .bar-label{position:absolute; bottom:-20px; left:0; right:0; text-align:center; font-size:10px; color:var(--muted);}
+
+  /* Funnel */
+  .funnel-wrap{margin-top:10px;}
+  .funnel-stage{margin-bottom:12px;}
+  .funnel-label{display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:4px;}
+  .funnel-label b{font-family:var(--font-mono);}
+  .funnel-bar-bg{height:28px; background:var(--base); border-radius:6px; overflow:hidden;}
+  .funnel-bar-fill{height:100%; background:linear-gradient(90deg, var(--brand), #7C90FF); border-radius:6px; display:flex; align-items:center; padding-left:10px; color:#fff; font-family:var(--font-mono); font-size:11px; font-weight:600;}
+  .funnel-bar-fill.alt{background:linear-gradient(90deg, var(--live), #34D6B4);}
+  .funnel-drop{font-size:10px; color:var(--urgency); margin:3px 0 0 4px; font-weight:600;}
+  .funnel-callout{background:var(--urgency-soft); color:var(--urgency); font-size:11.5px; font-weight:600; padding:10px 12px; border-radius:10px; margin-top:10px;}
+  .funnel-callout.good{background:var(--live-soft); color:#046C56;}
+  .funnel-comp-title{font-family:var(--font-display); font-weight:700; font-size:12.5px; margin:14px 0 8px;}
+  .funnel-comp-row{display:flex; align-items:center; gap:10px; margin-bottom:7px;}
+  .funnel-comp-label{width:78px; font-size:10.5px; font-weight:600; flex-shrink:0;}
+  .funnel-comp-bar-bg{flex:1; height:10px; background:var(--base); border-radius:99px; overflow:hidden;}
+  .funnel-comp-bar-fill{height:100%; border-radius:99px;}
+  .funnel-comp-pct{width:70px; text-align:right; font-family:var(--font-mono); font-size:10.5px; font-weight:600; flex-shrink:0;}
+
+  /* Segments */
+  .segment-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:6px;}
+  @media (max-width:760px){ .segment-grid{grid-template-columns:1fr;} }
+  .segment-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow-sm);}
+  .segment-icon{width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; margin-bottom:8px;}
+  .segment-name{font-family:var(--font-display); font-weight:700; font-size:14px;}
+  .segment-algo{font-size:10.5px; color:var(--ink-soft); margin:2px 0 10px;}
+  .segment-stat{display:flex; justify-content:space-between; font-size:11.5px; padding:6px 0; border-bottom:1px solid var(--line);}
+  .segment-stat:last-child{border-bottom:none;}
+
+  /* ROI */
+  .roi-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:6px;}
+  @media (max-width:700px){ .roi-grid{grid-template-columns:1fr;} }
+  .roi-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow-sm);}
+  .roi-card-title{font-family:var(--font-display); font-weight:700; font-size:12.5px; color:var(--ink-soft); margin-bottom:10px; text-transform:uppercase; letter-spacing:.04em;}
+  .roi-metric{display:flex; justify-content:space-between; align-items:baseline; padding:7px 0; border-bottom:1px solid var(--line); font-size:12.5px;}
+  .roi-metric:last-child{border-bottom:none;}
+  .roi-metric .num{font-family:var(--font-mono); font-weight:600; font-size:14px;}
+  .roi-delta{color:var(--live); font-size:11px; font-weight:700; margin-left:6px;}
+
+  .payout-flow{display:flex; align-items:stretch; gap:0; margin:14px 0 8px; overflow-x:auto; padding-bottom:4px;}
+  .flow-step{background:var(--base); border:1px solid var(--line); border-radius:12px; padding:12px 14px; min-width:150px; flex-shrink:0;}
+  .flow-step-num{font-family:var(--font-mono); font-size:10px; color:var(--brand); font-weight:700;}
+  .flow-step-title{font-family:var(--font-display); font-weight:700; font-size:12.5px; margin:5px 0 3px;}
+  .flow-step-sub{font-size:10.5px; color:var(--ink-soft); line-height:1.4;}
+  .flow-arrow{color:var(--muted); font-size:16px; padding:0 10px; flex-shrink:0; align-self:center;}
+  .wiz-field{margin-bottom:12px;}
+  .wiz-field label{font-size:10.5px; color:var(--ink-soft); font-weight:600; display:block; margin-bottom:5px;}
+  .wiz-field input{width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:var(--font-mono); background:var(--surface); color:var(--ink);}
+  .wiz-field input:focus{outline:2px solid var(--brand); outline-offset:1px;}
+  .flag-text{font-weight:600; font-size:11.5px;}
+
+  /* ===== New User Sign-Up wizard ===== */
+  .su-select{width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 11px; font-size:12.5px; font-family:var(--font-body); background:var(--surface); color:var(--ink);}
+  .su-select:focus{outline:2px solid var(--brand); outline-offset:1px;}
+  .su-step{display:none;}
+  .su-step.is-active{display:block;}
+  .su-hint{font-size:11px; color:var(--ink-soft); line-height:1.45; margin:0 0 12px;}
+  .su-social-row{display:flex; flex-direction:column; gap:8px; margin:2px 0 16px;}
+  .su-social-btn{width:100%; border:1px solid var(--line); border-radius:10px; padding:10px; background:var(--surface); font-family:var(--font-body); font-size:12px; font-weight:600; color:var(--ink); cursor:pointer; text-align:center;}
+  .su-divider{display:flex; align-items:center; gap:10px; font-size:10px; color:var(--muted); margin:14px 0; text-transform:uppercase; letter-spacing:.04em;}
+  .su-divider::before, .su-divider::after{content:''; flex:1; height:1px; background:var(--line);}
+  .su-check-row{display:flex; align-items:flex-start; gap:8px; font-size:11px; color:var(--ink-soft); line-height:1.45; cursor:pointer; margin-top:14px;}
+  .su-check-row input{margin-top:2px; flex-shrink:0;}
+  .su-toggle-row{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 0; border-bottom:1px solid var(--line); font-size:12.5px;}
+  .su-toggle-row:last-of-type{border-bottom:none;}
+  .su-toggle-row b{font-weight:600;}
+  .su-toggle-sub{font-size:10.5px; color:var(--ink-soft); margin-top:2px;}
+  .su-otp-hint{background:var(--brand-soft); color:var(--brand); font-size:11px; font-weight:600; padding:8px 11px; border-radius:10px; margin:-4px 0 14px;}
+  .su-nav{position:absolute; bottom:0; left:0; right:0; background:var(--surface); border-top:1px solid var(--line); padding:10px 18px 14px; display:flex; gap:10px; border-radius:0 0 28px 28px;}
+  .su-back{flex:0 0 auto; background:none; border:1px solid var(--line); border-radius:12px; padding:11px 16px; font-family:var(--font-display); font-weight:600; font-size:12.5px; color:var(--ink-soft); cursor:pointer;}
+  .su-next{flex:1; background:var(--ink); color:#fff; border:none; border-radius:12px; padding:11px; font-family:var(--font-display); font-weight:600; font-size:13px; cursor:pointer;}
+  .su-next[disabled]{opacity:.4; cursor:default;}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-switch">
+    <button id="btn-shopper" class="is-active">Shopper App</button>
+    <button id="btn-console">Growth &amp; Personalization Console</button>
+  </div>
+</div>
+
+<div class="app-stage">
+
+  <!-- ================= SHOPPER APP VIEW ================= -->
+  <div class="view is-active" id="view-shopper">
+    <div class="ma-layout">
+      <div class="ma-phone-col">
+        <div class="ms-toggle-row">
+          <button class="ms-toggle-btn" id="ms-btn-signup">🆕 New User Sign-Up</button>
+          <button class="ms-toggle-btn is-active" id="ms-btn-shop">🛍️ Shop</button>
+        </div>
+      <div class="ma-phone">
+        <div class="ma-notch"></div>
+        <div class="ma-screen" id="shop-screen">
+          <div class="ma-topbar">
+            <p class="ma-hello">Good afternoon</p>
+            <p class="ma-shopname">Hi, Nueng 👋 <span class="member-tier-badge">🥇 Gold</span></p>
+          </div>
+
+          <div class="ma-panels">
+
+            <!-- HOME -->
+            <div class="ma-panel is-active" data-panel="home">
+              <div class="home-search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" id="home-search-input" placeholder="Search products, categories, sellers">
+              </div>
+              <div class="chip-row" id="home-cat-chips"></div>
+
+              <div class="price-drop-banner" id="price-drop-banner">
+                <b>🔻 Price drop on your Wishlist</b>
+                Wireless Earbuds dropped from ฿1,290 to ฿990 — under your ฿999 target.
+                <button class="link-cta" id="price-drop-view-wl-btn">View Wishlist →</button>
+              </div>
+
+              <div id="home-browse-view" style="display:none;">
+                <p class="section-label">Search results</p>
+                <p class="table-summary" id="browse-summary" style="margin-top:0;"></p>
+                <div class="rec-grid" id="browse-grid"></div>
+              </div>
+
+              <div id="home-recommend-view">
+                <p class="section-label">View as</p>
+                <div class="segctrl" id="seg-switch">
+                  <button data-seg="new">New</button>
+                  <button data-seg="returning" class="is-active">Returning</button>
+                  <button data-seg="habitual">Habitual</button>
+                </div>
+                <p class="algo-banner" id="algo-banner"></p>
+
+                <div class="autocart-banner" id="autocart-banner-wrap" style="display:none;">
+                  <b>✨ We added 2 items to your cart</b>
+                  Detected from your buying pattern, with a loyalty discount already applied. Nothing charges until you check out.
+                  <button class="link-cta" data-goto="cart">Review cart →</button>
+                </div>
+
+                <p class="section-label">Recommended for you</p>
+                <div class="rec-grid" id="rec-grid"></div>
+              </div>
+            </div>
+
+            <!-- PDP -->
+            <div class="ma-panel" data-panel="pdp">
+              <button class="pdp-back" id="pdp-back-btn">← Back</button>
+              <div class="pdp-image" id="pdp-image">📦</div>
+              <div class="pdp-name" id="pdp-name">—</div>
+              <div class="pdp-price" id="pdp-price">฿0</div>
+              <div class="pdp-social" id="pdp-social"></div>
+              <div class="pdp-seller-card">
+                <div>
+                  <div class="pdp-seller-name" id="pdp-seller-name">—</div>
+                  <div class="pdp-seller-meta" id="pdp-seller-meta">—</div>
+                </div>
+                <span class="badge badge-verified" id="pdp-tier-badge">Gold</span>
+              </div>
+              <p class="pdp-desc" id="pdp-desc"></p>
+              <div class="pdp-qty">
+                <button id="pdp-qty-minus">−</button>
+                <span id="pdp-qty-val">1</span>
+                <button id="pdp-qty-plus">+</button>
+              </div>
+              <div class="pdp-actions">
+                <button class="pdp-wish-btn" id="pdp-wish-btn">♡</button>
+                <button class="checkout-btn" id="pdp-addcart-btn" style="flex:1;">Add to Cart</button>
+              </div>
+            </div>
+
+            <!-- CART -->
+            <div class="ma-panel" data-panel="cart">
+
+              <div id="cart-view">
+                <p class="section-label">Your cart</p>
+                <div class="ship-progress">
+                  <div class="ship-progress-text" id="ship-text">—</div>
+                  <div class="ship-bar-bg"><div class="ship-bar-fill" id="ship-fill" style="width:0%;"></div></div>
+                </div>
+
+                <div class="voucher-banner" id="voucher-banner">
+                  <span>🎟️ Auto-applied: <b>SAVE45</b></span><span id="voucher-banner-amount">−฿0</span>
+                </div>
+
+                <div id="cart-items"></div>
+
+                <div class="cart-total-row" style="border-top:1px dashed var(--line); font-weight:400; font-size:11.5px;"><span>Subtotal</span><span id="cart-subtotal">฿0</span></div>
+                <div class="cart-total-row" style="border-top:none; padding-top:2px; font-weight:400; font-size:11.5px; color:var(--live);"><span>Voucher SAVE45</span><span id="voucher-line-amount">−฿0</span></div>
+                <div class="cart-total-row" id="giftwrap-line" style="border-top:none; padding-top:2px; font-weight:400; font-size:11.5px; display:none;"><span>Gift wrap</span><span>+฿20</span></div>
+                <div class="cart-total-row" style="border-top:1px solid var(--line);"><span>Total</span><span id="cart-total">฿0</span></div>
+
+                <p class="section-label">Frequently bought together</p>
+                <div class="crosssell-row">
+                  <div class="crosssell-chip">
+                    <div class="cs-icon">🧽</div>
+                    <div>Sponge 3pk</div>
+                    <div class="cs-price">฿49</div>
+                    <button data-addcross data-name="Sponge 3pk" data-price="49" data-seller="Baan Ruen Home Co." data-tier="Gold">+ Add</button>
+                  </div>
+                  <div class="crosssell-chip">
+                    <div class="cs-icon">🗑️</div>
+                    <div>Trash Bags 30pk</div>
+                    <div class="cs-price">฿129</div>
+                    <button data-addcross data-name="Trash Bags 30pk" data-price="129" data-seller="Zone3 Traders" data-tier="Standard">+ Add</button>
+                  </div>
+                  <div class="crosssell-chip">
+                    <div class="cs-icon">🧺</div>
+                    <div>Kitchen Towel</div>
+                    <div class="cs-price">฿89</div>
+                    <button data-addcross data-name="Kitchen Towel" data-price="89" data-seller="MJ Home Supply" data-tier="Standard">+ Add</button>
+                  </div>
+                </div>
+
+                <div class="addon-row">
+                  <div><div class="addon-row-label">🎁 Add gift wrap</div><div class="addon-row-sub">+฿20 · wrapped &amp; ready to gift</div></div>
+                  <button class="toggle-switch" id="giftwrap-toggle"></button>
+                </div>
+
+                <button class="checkout-btn" id="go-checkout">Proceed to Checkout</button>
+
+                <button class="chat-fab" id="chat-fab-btn-cart">💬</button>
+                <div class="chat-panel" id="chat-panel-cart">
+                  <div class="chat-panel-title">Cart Assistant</div>
+                  <div class="chat-log">
+                    <div class="chat-msg bot">Hi! Ask me about shipping, vouchers, or an item in your cart.</div>
+                  </div>
+                  <div class="chat-quick-replies">
+                    <button data-chatq="freeship">🚚 How much more for free shipping?</button>
+                    <button data-chatq="voucher">🎟️ Can I use another voucher?</button>
+                    <button data-chatq="giftwrap">🎁 What does gift wrap include?</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="checkout-view" style="display:none;">
+                <div class="progress-steps">
+                  <div class="pstep done"><div class="pstep-line"></div><div class="pstep-dot">✓</div><div class="pstep-label">Cart</div></div>
+                  <div class="pstep done"><div class="pstep-line"></div><div class="pstep-dot">✓</div><div class="pstep-label">Shipping</div></div>
+                  <div class="pstep current"><div class="pstep-line"></div><div class="pstep-dot">3</div><div class="pstep-label">Payment</div></div>
+                  <div class="pstep"><div class="pstep-line"></div><div class="pstep-dot">4</div><div class="pstep-label">Confirm</div></div>
+                </div>
+                <p class="section-label" style="margin-top:0;">Payment</p>
+                <div class="bnpl-option is-selected" data-bnpl>
+                  <span><b>Pay in full</b><br><span style="color:var(--ink-soft);">One-time payment today</span></span>
+                  <span class="bnpl-radio"></span>
+                </div>
+                <div class="bnpl-option" data-bnpl>
+                  <span><b>3 installments</b><br><span style="color:var(--ink-soft);">0% interest, via BNPL partner</span></span>
+                  <span class="bnpl-radio"></span>
+                </div>
+                <div class="bnpl-option" data-bnpl>
+                  <span><b>6 installments</b><br><span style="color:var(--ink-soft);">0% interest, via BNPL partner</span></span>
+                  <span class="bnpl-radio"></span>
+                </div>
+                <button class="checkout-btn" id="place-order">Place Order</button>
+                <button class="link-back" id="back-to-cart">← Back to cart</button>
+
+                <button class="chat-fab" id="chat-fab-btn">💬</button>
+                <div class="chat-panel" id="chat-panel">
+                  <div class="chat-panel-title">Checkout Assistant</div>
+                  <div class="chat-log" id="chat-log">
+                    <div class="chat-msg bot">Hi! I can help with delivery, payment, or returns. What do you need?</div>
+                  </div>
+                  <div class="chat-quick-replies">
+                    <button data-chatq="delivery">📦 When will this arrive?</button>
+                    <button data-chatq="payment">💳 Can I combine BNPL with a voucher?</button>
+                    <button data-chatq="return">↩️ What's the return policy?</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="thankyou-view" style="display:none;">
+                <div class="thankyou-wrap">
+                  <div class="thankyou-check">✓</div>
+                  <div style="font-family:var(--font-display); font-weight:700; font-size:15px;">Order confirmed</div>
+                  <div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">#<span id="thankyou-order-id">AX-88214</span> · arriving in 2–4 days</div>
+                </div>
+                <button class="checkout-btn" id="track-order-btn" style="margin-top:14px;">Track your order →</button>
+                <div class="thankyou-card">
+                  <b>Complete the look</b>
+                  Add a Kitchen Towel Set for ฿89 — 20% off, today only.
+                </div>
+                <div class="thankyou-card">
+                  <b>Join Amaze Rewards</b>
+                  Earn 2% back on every order, starting with this one.
+                </div>
+                <div class="thankyou-card">
+                  <b>Share with a friend</b>
+                  You both get ฿50 off your next order.
+                </div>
+                <button class="link-back" id="back-to-home" style="margin-top:16px;">← Back to Home</button>
+              </div>
+
+            </div>
+
+            <!-- ORDERS -->
+            <div class="ma-panel" data-panel="orders">
+              <div id="shop-orders-list-view">
+                <p class="section-label" style="margin-top:0;">Your Orders</p>
+                <div id="shop-orders-list"></div>
+                <p class="ma-side-note" style="padding-top:10px; max-width:none;">Same stepper, same stage names as the Merchant App — you're just seeing it from the other side. Unlike a merchant, you see every seller in a split order in full detail, since you paid once and want one view.</p>
+              </div>
+              <div id="shop-orders-detail-view" style="display:none;">
+                <button class="link-back" id="shop-order-back">← Back to Orders</button>
+                <div id="shop-order-detail-content"></div>
+
+                <button class="chat-fab" id="chat-fab-btn-track">💬</button>
+                <div class="chat-panel" id="chat-panel-track">
+                  <div class="chat-panel-title">Order Support</div>
+                  <div class="chat-log">
+                    <div class="chat-msg bot">Hi! I can help with delays, delivery details, or contacting a seller.</div>
+                  </div>
+                  <div class="chat-quick-replies">
+                    <button data-chatq="delay">⏱️ Why is my order delayed?</button>
+                    <button data-chatq="address">📍 Can I change the delivery address?</button>
+                    <button data-chatq="seller">💬 Contact the seller directly</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WANT LIST -->
+            <div class="ma-panel" data-panel="wantlist">
+              <div id="wl-list-view">
+                <p class="section-label">Your Want-List</p>
+                <div class="chip-row" id="wl-subtabs" style="margin-top:8px;">
+                  <button type="button" class="chip is-active" data-wltab="auction">🎯 Auction</button>
+                  <button type="button" class="chip" data-wltab="wishlist">🔔 Wishlist</button>
+                </div>
+                <div id="wl-list" style="margin-top:10px;"></div>
+                <div class="wl-add-form">
+                  <input type="text" id="wl-name-input" placeholder="Item you're waiting for">
+                  <input type="number" id="wl-price-input" placeholder="Target ฿" style="max-width:70px;">
+                  <button id="wl-add-btn">Add</button>
+                </div>
+                <p class="ma-side-note" style="padding-top:14px;" id="wl-side-note">When enough shoppers want the same item, we trigger a live Demand-Triggered Auction so merchants compete to fulfill it. Tap any item to see exactly where it stands — see the same auction from the merchant's side in the Part 4 mockup.</p>
+              </div>
+              <div id="wl-detail-view" style="display:none;">
+                <button class="wl-detail-back" id="wl-detail-back">← Back to Want-List</button>
+                <div id="wl-detail-content"></div>
+              </div>
+            </div>
+
+            <!-- PROFILE -->
+            <div class="ma-panel" data-panel="profile">
+              <div id="profile-main-view">
+                <p class="section-label">Your profile</p>
+                <div class="tier-track">
+                  <div class="tier-ladder">
+                    <span class="tier-step">🥉 Bronze</span>
+                    <span class="tier-step">🥈 Silver</span>
+                    <span class="tier-step is-current">🥇 Gold</span>
+                    <span class="tier-step">💎 Platinum</span>
+                  </div>
+                  <div class="wl-demand-text"><span>฿3,200 spent (90 days)</span><span>฿1,800 to Platinum</span></div>
+                  <div class="wl-demand-bar-bg"><div class="wl-demand-bar-fill" style="width:64%;"></div></div>
+                  <ul class="tier-perks">
+                    <li>Free shipping on every order</li>
+                    <li>Priority matching in Want-List auctions</li>
+                    <li>30-min early access to flash auctions</li>
+                  </ul>
+                  <button class="link-cta" id="view-tier-benefits-btn">View all tier criteria &amp; benefits →</button>
+                </div>
+                <div class="tier-track" style="margin-top:12px;">
+                  <div class="kv-row"><span>Segment</span><b>Habitual Buyer 🔮</b></div>
+                  <div class="kv-row"><span>Auto Add-to-Cart uses this month</span><b>4</b></div>
+                  <div class="kv-row"><span>Free shipping unlocked</span><b>3 times</b></div>
+                  <div class="kv-row"><span>Want-List matches won</span><b>1</b></div>
+                </div>
+              </div>
+
+              <div id="tier-benefits-view" style="display:none;">
+                <button class="link-back" id="tier-benefits-back">← Back to Profile</button>
+                <p class="section-label">Tier criteria &amp; benefits</p>
+                <p class="ma-side-note" style="padding-top:0; margin-top:0;">Tiers are based on rolling 90-day spend and update automatically — no action needed to move up.</p>
+
+                <div class="tier-benefit-card tier-bronze">
+                  <div class="tier-benefit-head">
+                    <span class="tier-benefit-name">🥉 Bronze</span>
+                    <span class="tier-benefit-range">฿0 – ฿999 / 90 days</span>
+                  </div>
+                  <ul class="tier-perks">
+                    <li>Standard shipping rates</li>
+                    <li>Earn 1% back in points</li>
+                    <li>Standard priority in Want-List auctions</li>
+                  </ul>
+                </div>
+
+                <div class="tier-benefit-card tier-silver">
+                  <div class="tier-benefit-head">
+                    <span class="tier-benefit-name">🥈 Silver</span>
+                    <span class="tier-benefit-range">฿1,000 – ฿2,999 / 90 days</span>
+                  </div>
+                  <ul class="tier-perks">
+                    <li>Free shipping over ฿500</li>
+                    <li>Earn 1.5% back in points</li>
+                    <li>Priority matching in Want-List auctions</li>
+                  </ul>
+                </div>
+
+                <div class="tier-benefit-card tier-gold is-current">
+                  <div class="tier-benefit-head">
+                    <span class="tier-benefit-name">🥇 Gold <span class="tier-benefit-current-tag">YOUR TIER</span></span>
+                    <span class="tier-benefit-range">฿3,000 – ฿4,999 / 90 days</span>
+                  </div>
+                  <ul class="tier-perks">
+                    <li>Free shipping on every order</li>
+                    <li>Earn 2% back in points</li>
+                    <li>Priority matching in Want-List auctions</li>
+                    <li>30-min early access to flash auctions</li>
+                  </ul>
+                </div>
+
+                <div class="tier-benefit-card tier-platinum">
+                  <div class="tier-benefit-head">
+                    <span class="tier-benefit-name">💎 Platinum</span>
+                    <span class="tier-benefit-range">฿5,000+ / 90 days</span>
+                  </div>
+                  <ul class="tier-perks">
+                    <li>Free express shipping on every order</li>
+                    <li>Earn 3% back in points</li>
+                    <li>Top priority matching in Want-List auctions</li>
+                    <li>60-min early access to flash auctions</li>
+                    <li>Dedicated support line</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="ma-tabbar">
+            <button class="ma-tab is-active" data-tab="home">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+              Home
+            </button>
+            <button class="ma-tab" data-tab="cart">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h2l2.6 12.4a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L21 7H6"/></svg>
+              Cart
+            </button>
+            <button class="ma-tab" data-tab="orders">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>
+              Orders
+            </button>
+            <button class="ma-tab" data-tab="wantlist">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.5-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6c-2.5 4.5-9.5 9-9.5 9z"/></svg>
+              Want-List
+            </button>
+            <button class="ma-tab" data-tab="profile">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+              Profile
+            </button>
+          </div>
+        </div>
+
+        <div class="ma-screen" id="signup-screen" style="display:none;">
+          <div class="ma-topbar">
+            <p class="ma-hello">Create account</p>
+            <p class="ma-shopname" id="su-step-title">Step 1 of 5</p>
+          </div>
+
+          <div class="ma-panels">
+
+            <div class="progress-steps" id="su-steps" style="margin-bottom:20px;">
+              <div class="pstep current" data-pstep="1"><div class="pstep-line"></div><div class="pstep-dot">1</div><div class="pstep-label">Account</div></div>
+              <div class="pstep" data-pstep="2"><div class="pstep-line"></div><div class="pstep-dot">2</div><div class="pstep-label">Verify</div></div>
+              <div class="pstep" data-pstep="3"><div class="pstep-line"></div><div class="pstep-dot">3</div><div class="pstep-label">About</div></div>
+              <div class="pstep" data-pstep="4"><div class="pstep-line"></div><div class="pstep-dot">4</div><div class="pstep-label">Interests</div></div>
+              <div class="pstep" data-pstep="5"><div class="pstep-line"></div><div class="pstep-dot">5</div><div class="pstep-label">Notify</div></div>
+            </div>
+
+            <!-- STEP 1: account creation -->
+            <div class="su-step is-active" data-step="1">
+              <p class="section-label">Create your account</p>
+              <div class="wiz-field"><label>Full name</label><input type="text" id="su-name" placeholder="e.g. Nueng Somchai"></div>
+              <div class="wiz-field"><label>Phone number</label><input type="tel" id="su-phone" placeholder="08X-XXX-XXXX"></div>
+              <div class="wiz-field" style="margin-bottom:0;"><label>Password</label><input type="password" id="su-password" placeholder="At least 8 characters"></div>
+              <div class="su-divider">or</div>
+              <div class="su-social-row">
+                <button class="su-social-btn" type="button">Continue with Google</button>
+                <button class="su-social-btn" type="button">Continue with Apple</button>
+              </div>
+              <label class="su-check-row"><input type="checkbox" id="su-terms">I agree to the Terms of Service and Privacy Policy</label>
+            </div>
+
+            <!-- STEP 2: OTP verification -->
+            <div class="su-step" data-step="2">
+              <p class="section-label">Verify your phone</p>
+              <p class="su-hint">We sent a 4-digit code to <b id="su-phone-echo">your phone</b>.</p>
+              <p class="su-otp-hint">🧪 Demo mode — enter any 4 digits to continue.</p>
+              <div class="wiz-field" style="margin-bottom:0;"><label>Verification code</label><input type="text" id="su-otp" maxlength="4" placeholder="••••" style="letter-spacing:6px; font-size:16px;"></div>
+              <button class="link-cta" id="su-resend" type="button" style="margin-top:12px;">Resend code</button>
+            </div>
+
+            <!-- STEP 3: demographics -->
+            <div class="su-step" data-step="3">
+              <p class="section-label">Tell us about you</p>
+              <p class="su-hint">Optional, but it helps us skip showing you things you'll never want.</p>
+              <div class="wiz-field"><label>Age range</label>
+                <select class="su-select" id="su-age">
+                  <option value="">Prefer not to say</option>
+                  <option value="Under 25">Under 25</option>
+                  <option value="25–34">25–34</option>
+                  <option value="35–44">35–44</option>
+                  <option value="45–54">45–54</option>
+                  <option value="55+">55+</option>
+                </select>
+              </div>
+              <div class="wiz-field"><label>Gender</label>
+                <select class="su-select" id="su-gender">
+                  <option value="">Prefer not to say</option>
+                  <option value="Woman">Woman</option>
+                  <option value="Man">Man</option>
+                  <option value="Non-binary">Non-binary</option>
+                </select>
+              </div>
+              <div class="wiz-field" style="margin-bottom:0;"><label>Location</label>
+                <select class="su-select" id="su-location">
+                  <option value="">Prefer not to say</option>
+                  <option value="Bangkok">Bangkok</option>
+                  <option value="Chiang Mai">Chiang Mai</option>
+                  <option value="Phuket">Phuket</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- STEP 4: category interests -->
+            <div class="su-step" data-step="4">
+              <p class="section-label">What are you into?</p>
+              <p class="su-hint">Pick as many as you like — this shapes your first recommendations before we have any purchase history to learn from.</p>
+              <div class="chip-row" id="su-cat-chips"></div>
+            </div>
+
+            <!-- STEP 5: notifications + referral -->
+            <div class="su-step" data-step="5">
+              <p class="section-label">Stay in the loop</p>
+              <div class="su-toggle-row">
+                <div><b>Price drop alerts</b><div class="su-toggle-sub">When a Want-List item drops in price</div></div>
+                <button class="toggle-switch is-on" id="su-notif-pricedrop" type="button"></button>
+              </div>
+              <div class="su-toggle-row">
+                <div><b>Order updates</b><div class="su-toggle-sub">Fulfillment and delivery status</div></div>
+                <button class="toggle-switch is-on" id="su-notif-orders" type="button"></button>
+              </div>
+              <div class="su-toggle-row">
+                <div><b>Promotions</b><div class="su-toggle-sub">Personalized offers and vouchers</div></div>
+                <button class="toggle-switch" id="su-notif-promo" type="button"></button>
+              </div>
+              <div class="wiz-field" style="margin-top:16px; margin-bottom:0;"><label>Referral code (optional)</label><input type="text" id="su-referral" placeholder="e.g. NUENG50"></div>
+              <p class="su-hint" id="su-referral-note" style="display:none; color:var(--live); font-weight:600; margin-top:8px;">✓ You'll both get ฿50 off your next order.</p>
+            </div>
+
+            <!-- STEP 6: done -->
+            <div class="su-step" data-step="6">
+              <div class="thankyou-wrap">
+                <div class="thankyou-check">✓</div>
+                <p style="font-family:var(--font-display); font-weight:700; font-size:15px; margin:0;">You're all set<span id="su-name-echo"></span> 👋</p>
+                <p style="font-size:11.5px; color:var(--ink-soft); margin-top:4px;">We'll use what you told us to shape your first recommendations.</p>
+                <div class="thankyou-card">
+                  <b>What we'll personalize with</b>
+                  <p id="su-summary" style="margin:0; font-size:11.5px; color:var(--ink-soft);"></p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="su-nav">
+            <button class="su-back" id="su-back" type="button">← Back</button>
+            <button class="su-next" id="su-next" type="button">Continue</button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= GROWTH & PERSONALIZATION CONSOLE VIEW ================= -->
+  <div class="view" id="view-console">
+    <div class="ac-layout">
+      <div class="ac-nav">
+        <div class="ac-nav-brand">Growth &amp; Personalization</div>
+        <span class="ac-nav-tag">Amaze internal team</span>
+        <button class="is-active" data-ac="overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>
+          Overview
+        </button>
+        <button data-ac="funnel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h18l-7 9v6l-4 2v-8z"/></svg>
+          Conversion Funnel
+        </button>
+        <button data-ac="segments">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"/><path d="M17 8.5a3 3 0 1 1 0-6"/><path d="M15.5 14.2c2.8.4 5 2.3 5 5.8"/></svg>
+          Segments &amp; Demand
+        </button>
+        <button data-ac="roi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.2c0 3-6 1.5-6 4.5 0 1.3 1.3 2.3 3 2.3s3-1 3-2.3"/></svg>
+          ROI
+        </button>
+      </div>
+      <div class="ac-panels">
+
+        <div class="ac-panel is-active" data-acpanel="overview">
+          <p class="ac-panel-title">Personalization Impact</p>
+          <p class="ac-panel-sub">Aggregated across 1M active shoppers — the right altitude before drilling into segments or the funnel.</p>
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Average Order Value</div>
+              <div class="kpi-num">฿220</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,18 12,16 24,15 36,11 48,10 60,6 70,4" fill="none" stroke="#00B894" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up">↑ 10% vs last quarter</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Frequency of Purchase</div>
+              <div class="kpi-num">3.3 / qtr</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,19 12,17 24,16 36,13 48,11 60,7 70,5" fill="none" stroke="#00B894" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up">↑ 0.3 orders</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Cart-to-Checkout Completion Rate</div>
+              <div class="kpi-num">58%</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,20 12,18 24,16 36,13 48,10 60,7 70,5" fill="none" stroke="#00B894" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up">↑ 8 pts</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Auto Add-to-Cart Checkout Rate</div>
+              <div class="kpi-num">71%</div>
+              <svg class="kpi-spark" viewBox="0 0 70 24" width="70" height="24"><polyline points="0,20 12,17 24,15 36,12 48,9 60,7 70,4" fill="none" stroke="#B9860C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <div class="kpi-trend up">of prompted carts</div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <p class="chart-title">Average Order Value by segment</p>
+            <p class="chart-sub">Habitual shoppers, powered by Predictive Replenishment, carry the highest basket</p>
+            <div class="bars">
+              <div class="bar" style="height:47%;"><span class="bar-value">฿140</span><span class="bar-label">New</span></div>
+              <div class="bar" style="height:70%;"><span class="bar-value">฿210</span><span class="bar-label">Returning</span></div>
+              <div class="bar is-peak" style="height:100%;"><span class="bar-value">฿300</span><span class="bar-label">Habitual</span></div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <p class="chart-title">Frequency of Purchase by segment</p>
+            <p class="chart-sub">Habitual shoppers order roughly 4.4x more often than New — the segment Auto Add-to-Cart is built for</p>
+            <div class="bars">
+              <div class="bar" style="height:23%;"><span class="bar-value">1.4 / qtr</span><span class="bar-label">New</span></div>
+              <div class="bar" style="height:50%;"><span class="bar-value">3.1 / qtr</span><span class="bar-label">Returning</span></div>
+              <div class="bar is-peak" style="height:100%;"><span class="bar-value">6.2 / qtr</span><span class="bar-label">Habitual</span></div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <p class="chart-title">Cart-to-Checkout Completion Rate by segment</p>
+            <p class="chart-sub">Familiarity closes the gap — Habitual shoppers rarely second-guess a cart they've built before</p>
+            <div class="bars">
+              <div class="bar" style="height:58%;"><span class="bar-value">44%</span><span class="bar-label">New</span></div>
+              <div class="bar" style="height:78%;"><span class="bar-value">59%</span><span class="bar-label">Returning</span></div>
+              <div class="bar is-peak" style="height:100%;"><span class="bar-value">76%</span><span class="bar-label">Habitual</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ac-panel" data-acpanel="funnel">
+          <p class="ac-panel-title">Conversion Funnel Report</p>
+          <p class="ac-panel-sub">Main shopping funnel, last 30 days. Filter by segment to see where each one actually drops off.</p>
+          <div class="chip-row" id="funnel-seg-chips"></div>
+          <div class="funnel-wrap" id="funnel-main"></div>
+          <p class="funnel-callout" id="funnel-callout"></p>
+          <div id="funnel-composition"></div>
+
+          <p class="section-title">Want-List funnel, in parallel</p>
+          <p class="section-sub">Shoppers who declare intent convert at a very different rate than browse traffic.</p>
+          <div class="funnel-wrap">
+            <div class="funnel-stage">
+              <div class="funnel-label"><span>Want-List signup</span><b>8,400 · 100%</b></div>
+              <div class="funnel-bar-bg"><div class="funnel-bar-fill alt" style="width:100%;">100%</div></div>
+            </div>
+            <div class="funnel-stage">
+              <div class="funnel-label"><span>Notified of match</span><b>7,700 · 92%</b></div>
+              <div class="funnel-bar-bg"><div class="funnel-bar-fill alt" style="width:92%;">92%</div></div>
+            </div>
+            <div class="funnel-stage">
+              <div class="funnel-label"><span>Clicked through</span><b>5,700 · 68%</b></div>
+              <div class="funnel-bar-bg"><div class="funnel-bar-fill alt" style="width:68%;">68%</div></div>
+            </div>
+            <div class="funnel-stage">
+              <div class="funnel-label"><span>Purchased</span><b>4,500 · 54%</b></div>
+              <div class="funnel-bar-bg"><div class="funnel-bar-fill alt" style="width:54%;">54%</div></div>
+            </div>
+          </div>
+          <p class="funnel-callout good">54% end-to-end vs. 24% for browse traffic — verified intent converts roughly 2x better.</p>
+        </div>
+
+        <div class="ac-panel" data-acpanel="segments">
+          <p class="ac-panel-title">Segments &amp; Demand</p>
+          <p class="ac-panel-sub">The Data Logic answer at portfolio scale — three segments, three algorithms, and the aggregated Want-List demand feeding the Merchant Suite auction.</p>
+
+          <div class="segment-grid">
+            <div class="segment-card">
+              <div class="segment-icon" style="background:var(--brand-soft); color:var(--brand);">🌱</div>
+              <div class="segment-name">New</div>
+              <div class="segment-algo">Cold Start · popularity-based</div>
+              <div class="segment-stat"><span>Shoppers</span><b>340,000</b></div>
+              <div class="segment-stat"><span>Conversion</span><b>17%</b></div>
+              <div class="segment-stat"><span>Avg AOV</span><b>฿140</b></div>
+            </div>
+            <div class="segment-card">
+              <div class="segment-icon" style="background:var(--live-soft); color:#046C56;">🔁</div>
+              <div class="segment-name">Returning</div>
+              <div class="segment-algo">Collaborative filtering</div>
+              <div class="segment-stat"><span>Shoppers</span><b>510,000</b></div>
+              <div class="segment-stat"><span>Conversion</span><b>20%</b></div>
+              <div class="segment-stat"><span>Avg AOV</span><b>฿210</b></div>
+            </div>
+            <div class="segment-card">
+              <div class="segment-icon" style="background:var(--gold-soft); color:var(--gold);">🔮</div>
+              <div class="segment-name">Habitual</div>
+              <div class="segment-algo">Predictive replenishment</div>
+              <div class="segment-stat"><span>Shoppers</span><b>150,000</b></div>
+              <div class="segment-stat"><span>Conversion</span><b>24%</b></div>
+              <div class="segment-stat"><span>Avg AOV</span><b>฿300</b></div>
+            </div>
+          </div>
+
+          <p class="section-title">Aggregated Want-List demand</p>
+          <p class="section-sub" id="demand-summary"></p>
+          <p style="font-size:11px; color:var(--ink-soft); line-height:1.6; margin:0 0 10px;">
+            <span class="badge badge-rejected" style="margin-right:4px;">Below threshold</span>not enough shoppers yet, still accumulating &nbsp;·&nbsp;
+            <span class="badge badge-approved" style="margin-right:4px;">Auction triggered</span>crossed the threshold, merchants are bidding now &nbsp;·&nbsp;
+            <span class="badge badge-verified" style="margin-right:4px;">Fulfilled</span>a merchant already won and shoppers were matched
+          </p>
+          <div class="table-toolbar">
+            <input type="text" class="search-input" id="demand-search" placeholder="Search item, category, or zone">
+          </div>
+          <div class="chip-row" id="demand-chips"></div>
+          <table>
+            <thead><tr><th>Item</th><th>Category / Zone</th><th>Shoppers waiting</th><th>Status</th></tr></thead>
+            <tbody id="demand-body"></tbody>
+          </table>
+          <div class="pagination">
+            <button id="demand-prev">← Prev</button>
+            <span id="demand-pageinfo"></span>
+            <button id="demand-next">Next →</button>
+          </div>
+        </div>
+
+        <div class="ac-panel" data-acpanel="roi">
+          <p class="ac-panel-title">ROI Justification</p>
+          <p class="ac-panel-sub">Measured on a 10% traffic sample first, then extrapolated — not a guessed number.</p>
+
+          <div class="roi-grid">
+            <div class="roi-card">
+              <div class="roi-card-title">Test group (personalization on)</div>
+              <div class="roi-metric"><span>Average Order Value</span><span class="num">฿220</span></div>
+              <div class="roi-metric"><span>Frequency / quarter</span><span class="num">3.3</span></div>
+              <div class="roi-metric" style="align-items:flex-start;"><span>Conversion rate<br><span style="font-size:9px; color:var(--ink-soft); font-weight:400;">(Visit → Payment, full funnel)</span></span><span class="num">21%</span></div>
+            </div>
+            <div class="roi-card">
+              <div class="roi-card-title">Control group (personalization off)</div>
+              <div class="roi-metric"><span>Average Order Value</span><span class="num">฿200<span class="roi-delta">+10%</span></span></div>
+              <div class="roi-metric"><span>Frequency / quarter</span><span class="num">3<span class="roi-delta">+10%</span></span></div>
+              <div class="roi-metric" style="align-items:flex-start;"><span>Conversion rate<br><span style="font-size:9px; color:var(--ink-soft); font-weight:400;">(Visit → Payment, full funnel)</span></span><span class="num">19%<span class="roi-delta">+2 pts</span></span></div>
+            </div>
+          </div>
+
+          <p class="section-title">Payback period</p>
+          <p class="section-sub">How the uplift pays for the build.</p>
+          <div class="payout-flow">
+            <div class="flow-step">
+              <div class="flow-step-num">01</div>
+              <div class="flow-step-title">Build cost</div>
+              <div class="flow-step-sub">฿20M one-time, engineering + design</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+              <div class="flow-step-num">02</div>
+              <div class="flow-step-title">A/B test uplift</div>
+              <div class="flow-step-sub">+10% AOV, +10% frequency on 10% of traffic</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+              <div class="flow-step-num">03</div>
+              <div class="flow-step-title">Extrapolate</div>
+              <div class="flow-step-sub">Apply measured uplift to the full 1M shopper base</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+              <div class="flow-step-num">04</div>
+              <div class="flow-step-title">Payback</div>
+              <div class="flow-step-sub">See the live calculator below for the exact period under your assumptions</div>
+            </div>
+          </div>
+          <p class="section-title">Uplift by segment</p>
+          <p class="section-sub">The aggregate +10% AOV hides real variation — Habitual shoppers respond most.</p>
+          <table>
+            <thead><tr><th>Segment</th><th>Test AOV</th><th>Control AOV</th><th>Uplift</th><th>Test conv.</th><th>Control conv.</th></tr></thead>
+            <tbody>
+              <tr><td>🌱 New</td><td>฿143</td><td>฿140</td><td class="flag-text" style="color:var(--live);">+2.1%</td><td>18%</td><td>17%</td></tr>
+              <tr><td>🔁 Returning</td><td>฿224</td><td>฿210</td><td class="flag-text" style="color:var(--live);">+6.7%</td><td>21%</td><td>20%</td></tr>
+              <tr><td>🔮 Habitual</td><td>฿333</td><td>฿300</td><td class="flag-text" style="color:var(--live);">+11.0%</td><td>26%</td><td>24%</td></tr>
+            </tbody>
+          </table>
+          <p class="ma-side-note" style="max-width:none; padding-top:10px;">New shoppers barely move — there is no history yet for personalization to work with. This is expected, and it is why Cold Start (popularity-based) is a placeholder strategy, not the end state, for that segment.</p>
+
+          <p class="section-title">Payback calculator</p>
+          <p class="section-sub">Live — adjust any input and the payback period recalculates.</p>
+          <div class="roi-grid">
+            <div class="roi-card">
+              <div class="roi-card-title">Assumptions</div>
+              <div class="wiz-field"><label>Control AOV (฿)</label><input type="number" id="roi-control-aov" value="200"></div>
+              <div class="wiz-field"><label>Control frequency (orders/quarter)</label><input type="number" id="roi-control-freq" value="3" step="0.1"></div>
+              <div class="wiz-field"><label>Build cost (฿)</label><input type="number" id="roi-cost" value="20000000"></div>
+              <div class="wiz-field"><label>Measured AOV uplift (%)</label><input type="number" id="roi-aov-uplift" value="10" step="0.5"></div>
+              <div class="wiz-field"><label>Measured frequency uplift (%)</label><input type="number" id="roi-freq-uplift" value="10" step="0.5"></div>
+              <div class="wiz-field"><label>Platform take rate (%) — Amaze commission, not GMV</label><input type="number" id="roi-take-rate" value="8" step="0.5"></div>
+              <div class="wiz-field" style="margin-bottom:0;"><label>Shopper base (full rollout, phased in ahead of the 6-month mark — lower to model an earlier stage)</label><input type="number" id="roi-base" value="1000000"></div>
+            </div>
+            <div class="roi-card">
+              <div class="roi-card-title">Result</div>
+              <div class="roi-metric"><span>Baseline monthly GMV / shopper</span><span class="num" id="roi-baseline-rev">—</span></div>
+              <div class="roi-metric"><span>Incremental monthly GMV</span><span class="num" id="roi-incremental-rev">—</span></div>
+              <div class="roi-metric"><span>Incremental monthly revenue<br><span style="font-size:9px; color:var(--ink-soft); font-weight:400;">(at platform take rate)</span></span><span class="num" id="roi-incremental-platform-rev">—</span></div>
+              <div class="roi-metric"><span>Payback period</span><span class="num" id="roi-payback">—</span></div>
+              <div class="roi-metric"><span>Year-1 net return</span><span class="num" id="roi-year1">—</span></div>
+              <p style="font-size:10px; color:var(--ink-soft); line-height:1.5; margin:10px 0 0;" id="roi-calc-note"></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  /* ---------- seeded RNG, same approach as the Part 4 mockup ---------- */
+  function mulberry32(a){
+    return function(){
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  var rand = mulberry32(2024);
+  function pick(arr){ return arr[Math.floor(rand()*arr.length)]; }
+  function randInt(min,max){ return Math.floor(min+rand()*(max-min+1)); }
+
+  /* ---------- top-level view switch ---------- */
+  var topSwitches = [
+    {btn:document.getElementById('btn-shopper'), view:document.getElementById('view-shopper')},
+    {btn:document.getElementById('btn-console'), view:document.getElementById('view-console')}
+  ];
+  function showTopView(target){
+    topSwitches.forEach(function(entry){
+      var active = entry.btn===target;
+      entry.btn.classList.toggle('is-active', active);
+      entry.view.classList.toggle('is-active', active);
+    });
+  }
+  topSwitches.forEach(function(entry){
+    entry.btn.addEventListener('click', function(){ showTopView(entry.btn); });
+  });
+
+  /* ---------- secondary in-phone switch: Shop vs New User Sign-Up ---------- */
+  var msShopBtn = document.getElementById('ms-btn-shop');
+  var msSignupBtn = document.getElementById('ms-btn-signup');
+  var shopScreenEl = document.getElementById('shop-screen');
+  var signupScreenEl = document.getElementById('signup-screen');
+  function showMsScreen(mode){
+    var isShop = mode==='shop';
+    msShopBtn.classList.toggle('is-active', isShop);
+    msSignupBtn.classList.toggle('is-active', !isShop);
+    shopScreenEl.style.display = isShop ? '' : 'none';
+    signupScreenEl.style.display = isShop ? 'none' : '';
+  }
+  msShopBtn.addEventListener('click', function(){ showMsScreen('shop'); });
+  msSignupBtn.addEventListener('click', function(){ showMsScreen('signup'); });
+
+  /* ---------- shopper app bottom tabs ---------- */
+  var tabs=document.querySelectorAll('.ma-tab');
+  var panels=document.querySelectorAll('.ma-panel');
+  function showPanel(name){
+    tabs.forEach(function(t){ t.classList.toggle('is-active', t.dataset.tab===name); });
+    panels.forEach(function(p){ p.classList.toggle('is-active', p.dataset.panel===name); });
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ showPanel(t.dataset.tab); }); });
+  document.querySelectorAll('[data-goto]').forEach(function(el){
+    el.addEventListener('click', function(){ showPanel(el.dataset.goto); });
+  });
+
+  /* ---------- admin console sidebar ---------- */
+  var acButtons=document.querySelectorAll('.ac-nav button');
+  var acPanels=document.querySelectorAll('.ac-panel');
+  acButtons.forEach(function(b){
+    b.addEventListener('click', function(){
+      acButtons.forEach(function(x){ x.classList.remove('is-active'); });
+      b.classList.add('is-active');
+      acPanels.forEach(function(p){ p.classList.toggle('is-active', p.dataset.acpanel===b.dataset.ac); });
+    });
+  });
+
+  /* ============ Home tab: segment switcher (Data Logic, made tangible) ============ */
+  var segData = {
+    new: {
+      banner: '🌱 Cold Start Logic — no purchase history yet, so we show trending items popular in your area.',
+      items: [
+        {name:'Insulated Tumbler 500ml', price:249, icon:'🥤', bg:'var(--brand-soft)', tag:'🔥 Trending in Bangkok', category:'Home & Kitchen', seller:'Baan Ruen Home Co.', tier:'Gold', rating:4.8, reviews:1240, viewing:12, sold:340, desc:'Double-wall insulated tumbler, keeps drinks cold for 12 hours or hot for 6. Leak-proof lid, fits standard cup holders.'},
+        {name:'Bamboo Cutting Board', price:189, icon:'🪵', bg:'var(--live-soft)', tag:'🔥 Best seller this week', category:'Home & Kitchen', seller:'Zone3 Traders', tier:'Standard', rating:4.5, reviews:512, viewing:7, sold:210, desc:'Sustainably sourced bamboo, naturally antibacterial. Reversible with a built-in juice groove.'},
+        {name:'LED Desk Lamp', price:329, icon:'💡', bg:'var(--gold-soft)', tag:'🔥 Top rated new arrival', category:'Electronics Accessories', seller:'Kitchen Plus Co.', tier:'Gold', rating:4.9, reviews:88, viewing:19, sold:64, desc:'Adjustable brightness and color temperature, USB-C powered, foldable arm for desk or bedside use.'},
+        {name:'Reusable Produce Bags', price:99, icon:'🥬', bg:'var(--urgency-soft)', tag:'🔥 Trending in your area', category:'Grocery & Pantry', seller:'MJ Home Supply', tier:'Standard', rating:4.3, reviews:301, viewing:4, sold:890, desc:'Set of 8 mesh bags for fruit and vegetables, machine washable, replaces single-use plastic bags.'}
+      ]
+    },
+    returning: {
+      banner: '🔁 Collaborative Filtering — recommendations based on shoppers with similar taste to you.',
+      items: [
+        {name:'Ceramic Coffee Dripper', price:299, icon:'☕', bg:'var(--brand-soft)', tag:'Shoppers like you also bought', category:'Home & Kitchen', seller:'Baan Ruen Home Co.', tier:'Gold', rating:4.7, reviews:670, viewing:9, sold:410, desc:'Pour-over ceramic dripper with a ribbed interior for even extraction, fits standard mugs and carafes.'},
+        {name:'Glass Storage Set', price:459, icon:'🥡', bg:'var(--live-soft)', tag:'Because you viewed Kitchen items', category:'Home & Kitchen', seller:'Zone3 Traders', tier:'Standard', rating:4.6, reviews:225, viewing:5, sold:150, desc:'5-piece borosilicate glass containers with airtight lids, oven and freezer safe.'},
+        {name:'Non-stick Pan 24cm', price:599, icon:'🍳', bg:'var(--gold-soft)', tag:'Pairs well with your last order', category:'Home & Kitchen', seller:'Kitchen Plus Co.', tier:'Gold', rating:4.8, reviews:940, viewing:22, sold:1200, desc:'Induction-ready non-stick pan with a reinforced ceramic coating, rated for 2x the durability of standard non-stick.'},
+        {name:'Wooden Spice Rack', price:219, icon:'🧂', bg:'var(--urgency-soft)', tag:'Similar shoppers bought this', category:'Home & Kitchen', seller:'Baan Ruen Home Co.', tier:'Gold', rating:4.4, reviews:158, viewing:3, sold:95, desc:'Rotating countertop spice rack, holds up to 16 jars, solid acacia wood construction.'}
+      ]
+    },
+    habitual: {
+      banner: '🔮 Predictive Replenishment — we detected a buying pattern and moved reorder time forward for you.',
+      items: [
+        {name:'Stackable Bin 12L', price:390, icon:'📦', bg:'var(--brand-soft)', tag:'🔮 Due for reorder in 2 days', category:'Home & Kitchen', seller:'Baan Ruen Home Co.', tier:'Gold', rating:4.7, reviews:812, viewing:14, sold:2100, desc:'Stackable, airtight storage bin with a locking lid — the item this shopper reorders roughly every 30 days.'},
+        {name:'Dish Soap Refill 1L', price:89, icon:'🧴', bg:'var(--live-soft)', tag:'🔮 You buy this every 27 days', category:'Home & Kitchen', seller:'Baan Ruen Home Co.', tier:'Gold', rating:4.6, reviews:340, viewing:6, sold:3400, desc:'Concentrated dish soap refill, cuts grease fast, mild on hands, unscented option available.'},
+        {name:'Coffee Beans 250g', price:245, icon:'☕', bg:'var(--gold-soft)', tag:'🔮 Reorder window open now', category:'Grocery & Pantry', seller:'MJ Home Supply', tier:'Standard', rating:4.5, reviews:501, viewing:11, sold:1650, desc:'Medium roast single-origin beans, roasted weekly, whole bean or ground on request.'},
+        {name:'Trash Bags 30pcs', price:129, icon:'🗑️', bg:'var(--urgency-soft)', tag:'🔮 Running low, based on your pace', category:'Home & Kitchen', seller:'Zone3 Traders', tier:'Standard', rating:4.4, reviews:220, viewing:2, sold:980, desc:'Heavy-duty 30L bags with drawstring closure, tear-resistant, unscented.'}
+      ]
+    }
+  };
+  /* ---- new-user preferences: captured by the dedicated Sign-Up flow, read here ---- */
+  var newUserPrefs = null;
+
+  function buildNewUserRecs(){
+    if(!newUserPrefs || !newUserPrefs.categories.length){ return null; }
+    var cats = newUserPrefs.categories;
+    var pool = catalogProducts.filter(function(p){ return cats.indexOf(p.category)>-1; });
+    pool.sort(function(a,b){ return (b.rating*b.reviews) - (a.rating*a.reviews); });
+    return pool.length ? pool.slice(0,4) : null;
+  }
+
+  function renderHomeSeg(seg){
+    var banner, items;
+    var personalized = seg==='new' ? buildNewUserRecs() : null;
+    if(seg==='new' && personalized){
+      var locText = newUserPrefs.location ? (' near ' + newUserPrefs.location) : '';
+      banner = '🌱 Cold Start Logic — no purchase history yet, so we lead with what you told us at signup: ' + newUserPrefs.categories.join(', ') + locText + '.';
+      items = personalized;
+    } else {
+      banner = segData[seg].banner;
+      items = segData[seg].items;
+    }
+    document.getElementById('algo-banner').textContent = banner;
+    var grid=document.getElementById('rec-grid');
+    grid.innerHTML='';
+    items.forEach(function(it){
+      var div=document.createElement('div');
+      div.className='rec-card';
+      div.innerHTML =
+        '<div class="rec-thumb" style="background:'+it.bg+';">'+it.icon+'</div>'+
+        '<div class="rec-name">'+it.name+'</div>'+
+        '<div class="rec-price">฿'+it.price+'</div>'+
+        '<div class="rec-tag">'+(it.tag || 'Matches your interests')+'</div>';
+      div.addEventListener('click', function(){ openPDP(it); });
+      grid.appendChild(div);
+    });
+    document.getElementById('autocart-banner-wrap').style.display = seg==='habitual' ? 'block' : 'none';
+  }
+  document.querySelectorAll('#seg-switch button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('#seg-switch button').forEach(function(x){ x.classList.remove('is-active'); });
+      b.classList.add('is-active');
+      renderHomeSeg(b.dataset.seg);
+    });
+  });
+  renderHomeSeg('returning');
+
+  /* ============ Home: search & category browse (all products) ============ */
+  var catalogProducts=[
+    {name:'Ceramic Coffee Dripper', price:299, icon:'☕', bg:'var(--brand-soft)', tag:'', category:'Home & Kitchen', seller:'Baan Ruen Home Co.', tier:'Gold', rating:4.7, reviews:670, viewing:9, sold:410, desc:'Pour-over ceramic dripper with a ribbed interior for even extraction.'},
+    {name:'Cotton Bath Towel Set', price:349, icon:'🧻', bg:'var(--live-soft)', tag:'', category:'Home & Kitchen', seller:'Lanna Textiles', tier:'Standard', rating:4.5, reviews:210, viewing:3, sold:180, desc:'Set of 4, 100% combed cotton, quick-dry weave.'},
+    {name:'Rain Jacket (Unisex)', price:890, icon:'🧥', bg:'var(--gold-soft)', tag:'', category:'Apparel', seller:'Lanna Textiles', tier:'Standard', rating:4.4, reviews:96, viewing:6, sold:75, desc:'Waterproof shell with taped seams, packs into its own pocket.'},
+    {name:'Graphic Tee', price:259, icon:'👕', bg:'var(--brand-soft)', tag:'', category:'Apparel', seller:'Zone3 Traders', tier:'Standard', rating:4.2, reviews:340, viewing:8, sold:620, desc:'100% cotton, screen-printed, pre-shrunk.'},
+    {name:'Camping Tent 2-Person', price:2190, icon:'⛺', bg:'var(--live-soft)', tag:'', category:'Outdoor & Camping', seller:'Phuket Coastal Goods', tier:'Standard', rating:4.6, reviews:64, viewing:15, sold:52, desc:'3-season tent, freestanding, weighs 2.1kg, includes rainfly.'},
+    {name:'Insulated Water Bottle 1L', price:390, icon:'🧊', bg:'var(--gold-soft)', tag:'', category:'Outdoor & Camping', seller:'Phuket Coastal Goods', tier:'Standard', rating:4.7, reviews:410, viewing:11, sold:920, desc:'Keeps water cold for 24 hours, powder-coated for grip.'},
+    {name:'Kids Rain Boots', price:250, icon:'👢', bg:'var(--urgency-soft)', tag:'', category:'Kids & Baby', seller:'Zone3 Traders', tier:'Standard', rating:4.5, reviews:150, viewing:4, sold:310, desc:'Non-slip sole, easy pull tabs, sizes 24–32.'},
+    {name:'Baby Muslin Blanket', price:399, icon:'🍼', bg:'var(--brand-soft)', tag:'', category:'Kids & Baby', seller:'MJ Home Supply', tier:'Standard', rating:4.8, reviews:288, viewing:7, sold:540, desc:'Breathable bamboo-cotton blend, softens with every wash.'},
+    {name:'Vitamin C Serum 30ml', price:459, icon:'💧', bg:'var(--live-soft)', tag:'', category:'Beauty & Personal Care', seller:'Kitchen Plus Co.', tier:'Gold', rating:4.6, reviews:1020, viewing:23, sold:2400, desc:'15% Vitamin C with Vitamin E, brightens and evens tone.'},
+    {name:'Bamboo Toothbrush Set', price:129, icon:'🪥', bg:'var(--gold-soft)', tag:'', category:'Beauty & Personal Care', seller:'Baan Ruen Home Co.', tier:'Gold', rating:4.4, reviews:180, viewing:2, sold:760, desc:'Set of 4, biodegradable handles, soft bristles.'},
+    {name:'Wireless Earbuds', price:1290, icon:'🎧', bg:'var(--urgency-soft)', tag:'', category:'Electronics Accessories', seller:'Kitchen Plus Co.', tier:'Gold', rating:4.5, reviews:540, viewing:31, sold:1900, desc:'Bluetooth 5.3, 24-hour case battery, touch controls.'},
+    {name:'Phone Stand (Adjustable)', price:199, icon:'📱', bg:'var(--brand-soft)', tag:'', category:'Electronics Accessories', seller:'Zone3 Traders', tier:'Standard', rating:4.3, reviews:95, viewing:5, sold:410, desc:'Foldable aluminum stand, fits phones and small tablets.'},
+    {name:'Basmati Rice 5kg', price:449, icon:'🍚', bg:'var(--live-soft)', tag:'', category:'Grocery & Pantry', seller:'MJ Home Supply', tier:'Standard', rating:4.7, reviews:620, viewing:9, sold:1500, desc:'Aged basmati, extra-long grain, aromatic.'},
+    {name:'Olive Oil 750ml', price:329, icon:'🫒', bg:'var(--gold-soft)', tag:'', category:'Grocery & Pantry', seller:'Baan Ruen Home Co.', tier:'Gold', rating:4.6, reviews:275, viewing:4, sold:680, desc:'Cold-pressed extra virgin, low acidity.'},
+    {name:'Yoga Mat 6mm', price:459, icon:'🧘', bg:'var(--urgency-soft)', tag:'', category:'Outdoor & Camping', seller:'Phuket Coastal Goods', tier:'Standard', rating:4.5, reviews:310, viewing:6, sold:890, desc:'Non-slip texture on both sides, includes carry strap.'},
+    {name:'Blender 1.5L', price:1090, icon:'🥤', bg:'var(--brand-soft)', tag:'', category:'Home & Kitchen', seller:'Kitchen Plus Co.', tier:'Gold', rating:4.6, reviews:430, viewing:13, sold:770, desc:'600W motor, 4 preset programs, dishwasher-safe jug.'},
+    {name:'Denim Jacket', price:1190, icon:'🧥', bg:'var(--live-soft)', tag:'', category:'Apparel', seller:'Lanna Textiles', tier:'Standard', rating:4.4, reviews:112, viewing:5, sold:190, desc:'Classic fit, stonewashed, brass buttons.'},
+    {name:'Kids Backpack', price:520, icon:'🎒', bg:'var(--gold-soft)', tag:'', category:'Kids & Baby', seller:'Zone3 Traders', tier:'Standard', rating:4.5, reviews:140, viewing:3, sold:260, desc:'Padded straps, reflective trim, fits A4 folders.'},
+    {name:'Face Sunscreen SPF50', price:319, icon:'☀️', bg:'var(--urgency-soft)', tag:'', category:'Beauty & Personal Care', seller:'Kitchen Plus Co.', tier:'Gold', rating:4.7, reviews:980, viewing:18, sold:2100, desc:'Lightweight, no white cast, reef-safe formula.'},
+    {name:'USB-C Charging Cable 2m', price:149, icon:'🔌', bg:'var(--brand-soft)', tag:'', category:'Electronics Accessories', seller:'Zone3 Traders', tier:'Standard', rating:4.3, reviews:410, viewing:7, sold:1650, desc:'Braided nylon, 60W fast charge rated.'},
+    {name:'Honey 500g', price:259, icon:'🍯', bg:'var(--live-soft)', tag:'', category:'Grocery & Pantry', seller:'MJ Home Supply', tier:'Standard', rating:4.8, reviews:340, viewing:4, sold:790, desc:'Raw wildflower honey, unfiltered, single origin.'},
+    {name:'Hiking Backpack 40L', price:1690, icon:'🎒', bg:'var(--gold-soft)', tag:'', category:'Outdoor & Camping', seller:'Phuket Coastal Goods', tier:'Standard', rating:4.6, reviews:88, viewing:9, sold:120, desc:'Ventilated back panel, rain cover included.'},
+    {name:'Baby Onesie 3-Pack', price:399, icon:'👶', bg:'var(--urgency-soft)', tag:'', category:'Kids & Baby', seller:'Lanna Textiles', tier:'Standard', rating:4.6, reviews:205, viewing:2, sold:480, desc:'Organic cotton, envelope neck for easy dressing.'},
+    {name:'Electric Kettle 1.7L', price:690, icon:'🫖', bg:'var(--brand-soft)', tag:'', category:'Home & Kitchen', seller:'Baan Ruen Home Co.', tier:'Gold', rating:4.5, reviews:520, viewing:10, sold:1340, desc:'Auto shut-off, boil-dry protection, 2200W.'}
+  ];
+  var homeCategories=['All','Home & Kitchen','Apparel','Outdoor & Camping','Kids & Baby','Beauty & Personal Care','Electronics Accessories','Grocery & Pantry'];
+  var homeCatFilter='All';
+  var homeQuery='';
+
+  function renderHomeCatChips(){
+    var el=document.getElementById('home-cat-chips');
+    el.innerHTML='';
+    homeCategories.forEach(function(c){
+      var chip=document.createElement('span');
+      chip.className='chip'+(c===homeCatFilter?' is-active':'');
+      chip.textContent=c;
+      chip.addEventListener('click', function(){ homeCatFilter=c; renderHomeCatChips(); renderBrowse(); });
+      el.appendChild(chip);
+    });
+  }
+  function renderBrowse(){
+    var q=homeQuery.toLowerCase();
+    var showBrowse = !!q || homeCatFilter!=='All';
+    document.getElementById('home-browse-view').style.display = showBrowse ? 'block' : 'none';
+    document.getElementById('home-recommend-view').style.display = showBrowse ? 'none' : 'block';
+    document.getElementById('price-drop-banner').style.display = showBrowse ? 'none' : 'block';
+    if(!showBrowse) return;
+    var results=catalogProducts.filter(function(p){
+      var mq = !q || p.name.toLowerCase().indexOf(q)>-1 || p.category.toLowerCase().indexOf(q)>-1 || p.seller.toLowerCase().indexOf(q)>-1;
+      var mc = homeCatFilter==='All' || p.category===homeCatFilter;
+      return mq && mc;
+    });
+    var grid=document.getElementById('browse-grid');
+    grid.innerHTML='';
+    results.forEach(function(it){
+      var div=document.createElement('div');
+      div.className='rec-card';
+      div.innerHTML =
+        '<div class="rec-thumb" style="background:'+it.bg+';">'+it.icon+'</div>'+
+        '<div class="rec-name">'+it.name+'</div>'+
+        '<div class="rec-price">฿'+it.price+'</div>'+
+        '<div class="rec-tag">'+it.seller+(it.tier==='Gold'?' · 🏅 Gold':'')+'</div>';
+      div.addEventListener('click', function(){ openPDP(it); });
+      grid.appendChild(div);
+    });
+    document.getElementById('browse-summary').textContent = results.length+' of '+catalogProducts.length+' products'+(homeCatFilter!=='All'?' in '+homeCatFilter:'');
+  }
+  document.getElementById('home-search-input').addEventListener('input', function(e){ homeQuery=e.target.value; renderBrowse(); });
+  renderHomeCatChips();
+  renderBrowse();
+
+  /* ============ PDP: Verified Seller Indicator + Live Social Proof ============ */
+  var pdpCurrentProduct=null;
+  var pdpQty=1;
+  var pdpViewingTimer=null;
+  function openPDP(product){
+    pdpCurrentProduct=product;
+    pdpQty=1;
+    document.getElementById('pdp-image').style.background=product.bg;
+    document.getElementById('pdp-image').textContent=product.icon;
+    document.getElementById('pdp-name').textContent=product.name;
+    document.getElementById('pdp-price').textContent='฿'+product.price;
+    document.getElementById('pdp-seller-name').textContent=product.seller;
+    document.getElementById('pdp-seller-meta').textContent=product.rating.toFixed(1)+'★ ('+product.reviews.toLocaleString()+' reviews)';
+    document.getElementById('pdp-tier-badge').textContent=product.tier;
+    document.getElementById('pdp-tier-badge').className='badge '+(product.tier==='Gold'?'badge-verified':'badge-approved');
+    document.getElementById('pdp-desc').textContent=product.desc;
+    document.getElementById('pdp-qty-val').textContent=pdpQty;
+    document.getElementById('pdp-social').innerHTML =
+      '<span class="pdp-social-badge">👀 '+product.viewing+' viewing now</span>'+
+      '<span class="pdp-social-badge sold">🔥 '+product.sold.toLocaleString()+' sold</span>';
+    document.getElementById('pdp-wish-btn').classList.remove('is-active');
+    document.getElementById('pdp-wish-btn').textContent='♡';
+    showPanel('pdp');
+    if(pdpViewingTimer) clearInterval(pdpViewingTimer);
+    pdpViewingTimer=setInterval(function(){
+      if(!pdpCurrentProduct) return;
+      pdpCurrentProduct.viewing=Math.max(1, pdpCurrentProduct.viewing+randIntP5(-1,2));
+      var badge=document.querySelector('.pdp-social-badge');
+      if(badge) badge.textContent='👀 '+pdpCurrentProduct.viewing+' viewing now';
+    },3500);
+  }
+  function randIntP5(min,max){ return Math.floor(min+Math.random()*(max-min+1)); }
+  document.getElementById('pdp-back-btn').addEventListener('click', function(){ showPanel('home'); });
+  document.getElementById('pdp-qty-minus').addEventListener('click', function(){ pdpQty=Math.max(1,pdpQty-1); document.getElementById('pdp-qty-val').textContent=pdpQty; });
+  document.getElementById('pdp-qty-plus').addEventListener('click', function(){ pdpQty=pdpQty+1; document.getElementById('pdp-qty-val').textContent=pdpQty; });
+  document.getElementById('pdp-wish-btn').addEventListener('click', function(){
+    var btn=document.getElementById('pdp-wish-btn');
+    var nowActive=!btn.classList.contains('is-active');
+    btn.classList.toggle('is-active', nowActive);
+    btn.textContent = nowActive ? '♥' : '♡';
+    if(nowActive && pdpCurrentProduct){
+      addToWantList(pdpCurrentProduct.name, pdpCurrentProduct.price);
+    }
+  });
+  document.getElementById('pdp-addcart-btn').addEventListener('click', function(){
+    if(!pdpCurrentProduct) return;
+    cartItems.push({id:'c'+(cartIdCounter++), name:pdpCurrentProduct.name+(pdpQty>1?' × '+pdpQty:''), price:pdpCurrentProduct.price*pdpQty, auto:false, seller:pdpCurrentProduct.seller, tier:pdpCurrentProduct.tier});
+    renderCart();
+    showPanel('cart');
+  });
+
+  /* ============ Cart: items, dynamic shipping, cross-sell, voucher, gift wrap ============ */
+  var FREE_SHIP_THRESHOLD = 1000;
+  var cartIdCounter = 0;
+  var giftWrapOn = false;
+  var GIFT_WRAP_FEE = 20;
+  var cartItems = [
+    {id:'c'+(cartIdCounter++), name:'Stackable Bin 12L', price:351, auto:true, seller:'Baan Ruen Home Co.', tier:'Gold'},
+    {id:'c'+(cartIdCounter++), name:'Dish Soap Refill 1L × 2', price:160, auto:true, seller:'Baan Ruen Home Co.', tier:'Gold'},
+    {id:'c'+(cartIdCounter++), name:'Bamboo Utensil Set', price:460, auto:false, seller:'Zone3 Traders', tier:'Standard'}
+  ];
+  function cartSubtotal(){ return cartItems.reduce(function(s,i){ return s+i.price; },0); }
+  function voucherAmount(subtotal){ return Math.min(45, Math.round(subtotal*0.05)); }
+  function cartTotal(){
+    var sub=cartSubtotal();
+    var v=voucherAmount(sub);
+    return sub - v + (giftWrapOn ? GIFT_WRAP_FEE : 0);
+  }
+  function renderCart(){
+    var list=document.getElementById('cart-items');
+    list.innerHTML='';
+    cartItems.forEach(function(it){
+      var div=document.createElement('div');
+      div.className='cart-item'+(it.auto?' auto':'');
+      div.innerHTML =
+        '<div><div class="cart-item-name">'+it.name+'</div>'+
+        (it.auto
+          ? '<div class="cart-item-auto-badge">✨ Auto-added · reorder pattern detected · 10% off</div>'
+          : '<div class="cart-item-meta">Added by you</div>')+
+        '</div>'+
+        '<div style="display:flex; align-items:center;">'+
+          '<div class="cart-item-price">฿'+it.price+'</div>'+
+          '<button class="cart-item-remove" data-remove="'+it.id+'">✕</button>'+
+        '</div>';
+      list.appendChild(div);
+    });
+    var sub=cartSubtotal();
+    var v=voucherAmount(sub);
+    var total=cartTotal();
+    var remaining=Math.max(0, FREE_SHIP_THRESHOLD-sub);
+    var pct=Math.min(100, Math.round((sub/FREE_SHIP_THRESHOLD)*100));
+    document.getElementById('ship-text').textContent = remaining>0 ? ('Add ฿'+remaining+' more for free shipping') : 'Free shipping unlocked 🎉';
+    document.getElementById('ship-fill').style.width=pct+'%';
+    document.getElementById('cart-subtotal').textContent='฿'+sub;
+    document.getElementById('voucher-line-amount').textContent='−฿'+v;
+    document.getElementById('voucher-banner-amount').textContent='−฿'+v;
+    document.getElementById('cart-total').textContent='฿'+total;
+    document.getElementById('giftwrap-line').style.display = giftWrapOn ? 'flex' : 'none';
+    list.querySelectorAll('[data-remove]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        cartItems = cartItems.filter(function(i){ return i.id!==btn.dataset.remove; });
+        renderCart();
+      });
+    });
+  }
+  document.getElementById('giftwrap-toggle').addEventListener('click', function(){
+    giftWrapOn=!giftWrapOn;
+    this.classList.toggle('is-on', giftWrapOn);
+    renderCart();
+  });
+  document.querySelectorAll('[data-addcross]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      cartItems.push({id:'c'+(cartIdCounter++), name:btn.dataset.name, price:parseInt(btn.dataset.price,10), auto:false, seller:btn.dataset.seller, tier:btn.dataset.tier});
+      renderCart();
+    });
+  });
+  renderCart();
+
+  /* checkout flow */
+  var cartView=document.getElementById('cart-view');
+  var checkoutView=document.getElementById('checkout-view');
+  var thankyouView=document.getElementById('thankyou-view');
+  document.getElementById('go-checkout').addEventListener('click', function(){
+    cartView.style.display='none'; checkoutView.style.display='block';
+  });
+  document.getElementById('back-to-cart').addEventListener('click', function(){
+    checkoutView.style.display='none'; cartView.style.display='block';
+  });
+  document.querySelectorAll('[data-bnpl]').forEach(function(opt){
+    opt.addEventListener('click', function(){
+      document.querySelectorAll('[data-bnpl]').forEach(function(o){ o.classList.remove('is-selected'); });
+      opt.classList.add('is-selected');
+    });
+  });
+  document.getElementById('place-order').addEventListener('click', function(){
+    checkoutView.style.display='none'; thankyouView.style.display='block';
+    shopOrderCounter++;
+    var newId='AX-'+shopOrderCounter;
+
+    var logisticsBySeller={'Baan Ruen Home Co.':'Kerry Express','Zone3 Traders':'Flash Express','MJ Home Supply':'Ninja Van','Kitchen Plus Co.':'J&T Express','Lanna Textiles':'Kerry Express','Phuket Coastal Goods':'Flash Express'};
+    var groups={}, sellerOrder=[];
+    cartItems.forEach(function(it){
+      var seller=it.seller || 'Baan Ruen Home Co.';
+      var tier=it.tier || 'Gold';
+      if(!groups[seller]){
+        groups[seller]={merchant:seller, tier:tier, logistics:logisticsBySeller[seller] || 'Kerry Express', items:[], amount:0};
+        sellerOrder.push(seller);
+      }
+      groups[seller].items.push(it.name);
+      groups[seller].amount += it.price;
+    });
+    var newSubOrders=sellerOrder.map(function(seller){
+      var g=groups[seller];
+      return {merchant:g.merchant, tier:g.tier, logistics:g.logistics, items:g.items.join(', '), amount:g.amount, stepIndex:0};
+    });
+
+    var newOrder={ id:newId, date:'Today', total:cartTotal(), subOrders:newSubOrders };
+    shopOrders.unshift(newOrder);
+    newestOrderId=newId;
+    document.getElementById('thankyou-order-id').textContent=newId;
+    renderShopOrdersList();
+  });
+  document.getElementById('track-order-btn').addEventListener('click', function(){
+    showPanel('orders');
+    if(newestOrderId) openShopOrder(newestOrderId);
+  });
+  document.getElementById('back-to-home').addEventListener('click', function(){
+    thankyouView.style.display='none'; cartView.style.display='block';
+    showPanel('home');
+  });
+
+  /* ============ Order tracking: same stepper language as the Part 4 Merchant App ============ */
+  var shopOrderCounter=88214;
+  var activeShopOrderId=null, newestOrderId=null;
+  var stepLabelsShop=['Confirmed','Packed','Picked&nbsp;up','Delivered'];
+  var shopOrders=[
+    {
+      id:'AX-88190', date:'Jul 28', total:459,
+      subOrders:[{merchant:'Kitchen Plus Co.', tier:'Gold', logistics:'Kerry Express', items:'Vitamin C Serum 30ml × 1', amount:459, stepIndex:3}]
+    },
+    {
+      id:'AX-88055', date:'Jul 22', total:1240,
+      subOrders:[
+        {merchant:'Baan Ruen Home Co.', tier:'Gold', logistics:'Kerry Express', items:'Ceramic Coffee Dripper × 1', amount:780, stepIndex:2},
+        {merchant:'Zone3 Traders', tier:'Standard', logistics:'Flash Express', items:'Bamboo Utensil Set × 1', amount:460, stepIndex:1}
+      ]
+    }
+  ];
+  function shopOrderOverallStage(order){
+    return Math.min.apply(null, order.subOrders.map(function(s){ return s.stepIndex; }));
+  }
+  function renderShopOrdersList(){
+    var wrap=document.getElementById('shop-orders-list');
+    wrap.innerHTML='';
+    shopOrders.forEach(function(order){
+      var minStep=shopOrderOverallStage(order);
+      var isDone=minStep===3;
+      var statusText = isDone ? 'Delivered' : stepLabelsShop[minStep].replace('&nbsp;',' ');
+      var row=document.createElement('div');
+      row.className='shop-ord-row'+(order.id===newestOrderId ? ' is-new' : '');
+      row.innerHTML=
+        '<div class="shop-ord-top"><span class="shop-ord-id">#'+order.id+'</span><span class="shop-ord-status '+(isDone?'done':'progress')+'">'+statusText+'</span></div>'+
+        '<div class="shop-ord-meta">'+order.subOrders[0].items+(order.subOrders.length>1?' + '+(order.subOrders.length-1)+' more':'')+' · '+order.date+'</div>'+
+        '<div class="shop-ord-bottom"><span class="shop-ord-total">฿'+order.total.toLocaleString()+'</span>'+
+        (order.subOrders.length>1 ? '<span class="shop-ord-split-tag">'+order.subOrders.length+' sellers</span>' : '')+'</div>';
+      row.addEventListener('click', function(id){ return function(){ openShopOrder(id); }; }(order.id));
+      wrap.appendChild(row);
+    });
+  }
+  function openShopOrder(id){
+    activeShopOrderId=id;
+    document.getElementById('shop-orders-list-view').style.display='none';
+    document.getElementById('shop-orders-detail-view').style.display='block';
+    renderShopOrderDetail();
+  }
+  function renderShopOrderDetail(){
+    var order=shopOrders.filter(function(o){ return o.id===activeShopOrderId; })[0];
+    var el=document.getElementById('shop-order-detail-content');
+    if(!order){ el.innerHTML=''; return; }
+    var html='<div class="order-parent"><div class="order-parent-top">'+
+      '<div><div class="order-id">ORDER #'+order.id+'</div><div class="order-meta">Placed '+order.date+' · '+order.subOrders.length+' seller'+(order.subOrders.length>1?'s':'')+'</div></div>'+
+      '<div><div class="order-total">฿'+order.total.toLocaleString()+'</div><div class="order-meta">total paid</div></div>'+
+      '</div><div class="fork">';
+    order.subOrders.forEach(function(so){
+      html += '<div class="fork-item"><div class="fork-head"><div><div class="fork-merchant">'+so.merchant+' <span style="font-size:9px; color:var(--gold); font-weight:700;">'+so.tier.toUpperCase()+'</span></div>'+
+        '<div class="fork-logistics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h11l4 4h3v-4l-3-5h-4"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg>via '+so.logistics+'</div></div></div>'+
+        '<div class="fork-items">'+so.items+' · ฿'+so.amount.toLocaleString()+'</div><div class="stepper">';
+      for(var i=0;i<4;i++){
+        var cls = i<so.stepIndex ? 'done' : (i===so.stepIndex ? 'current' : '');
+        html += '<div class="step '+cls+'"><div class="step-line"></div><div class="step-dot"></div><div class="step-label">'+stepLabelsShop[i]+'</div></div>';
+      }
+      html += '</div>'+(so.stepIndex===3
+        ? '<div class="sla-line"><span>Delivered</span><span class="sla-ok">complete</span></div>'
+        : '<div class="sla-line"><span>In progress</span><span class="sla-ok">on track</span></div>')+'</div>';
+    });
+    html += '</div></div>';
+    el.innerHTML=html;
+  }
+  document.getElementById('shop-order-back').addEventListener('click', function(){
+    document.getElementById('shop-orders-detail-view').style.display='none';
+    document.getElementById('shop-orders-list-view').style.display='block';
+  });
+  renderShopOrdersList();
+
+  /* orders in progress occasionally advance, simulating fulfillment updates arriving from the merchant side */
+  setInterval(function(){
+    var changed=false;
+    shopOrders.forEach(function(order){
+      order.subOrders.forEach(function(so){
+        if(so.stepIndex<3 && Math.random()<0.15){ so.stepIndex++; changed=true; }
+      });
+    });
+    if(changed){
+      renderShopOrdersList();
+      if(activeShopOrderId) renderShopOrderDetail();
+    }
+  },6000);
+
+  /* ============ Tier criteria & benefits detail view ============ */
+  document.getElementById('view-tier-benefits-btn').addEventListener('click', function(){
+    document.getElementById('profile-main-view').style.display='none';
+    document.getElementById('tier-benefits-view').style.display='block';
+  });
+  document.getElementById('tier-benefits-back').addEventListener('click', function(){
+    document.getElementById('tier-benefits-view').style.display='none';
+    document.getElementById('profile-main-view').style.display='block';
+  });
+
+  /* ============ Chat assistants: Checkout, Cart, Order Support ============ */
+  function wireChatWidget(fabId, panelId, answers){
+    var fab=document.getElementById(fabId);
+    var panel=document.getElementById(panelId);
+    if(!fab || !panel) return;
+    fab.addEventListener('click', function(){
+      panel.classList.toggle('is-open');
+    });
+    panel.querySelectorAll('[data-chatq]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var log=panel.querySelector('.chat-log');
+        var userMsg=document.createElement('div');
+        userMsg.className='chat-msg user';
+        userMsg.textContent=btn.textContent;
+        log.appendChild(userMsg);
+        var ans=answers[btn.dataset.chatq];
+        var botMsg=document.createElement('div');
+        botMsg.className='chat-msg bot';
+        botMsg.textContent = typeof ans==='function' ? ans() : (ans || "Let me connect you with support for that.");
+        log.appendChild(botMsg);
+        log.scrollTop=log.scrollHeight;
+      });
+    });
+  }
+
+  var checkoutChatAnswers={
+    delivery:'Standard delivery is 2–4 days. Since your cart already unlocks free shipping, there is no extra cost.',
+    payment:'Yes — the auto-applied voucher and BNPL installments stack. Your total already reflects the voucher; just pick an installment plan above.',
+    return:'Free returns within 7 days of delivery, as long as the item is unused and in its original packaging.'
+  };
+  var cartChatAnswers={
+    freeship:function(){
+      var remaining=Math.max(0, FREE_SHIP_THRESHOLD-cartSubtotal());
+      return remaining>0
+        ? ('You\'re ฿'+remaining+' away from free shipping — add one more item or check today\'s Recommended picks.')
+        : 'You\'ve already unlocked free shipping on this order 🎉';
+    },
+    voucher:'SAVE45 is already auto-applied and is the best voucher available for this cart — vouchers don\'t stack, so you\'re getting the maximum discount.',
+    giftwrap:'Gift wrap adds padded tissue paper, a ribbon, and a handwritten note card for +฿20 per order.'
+  };
+  var trackChatAnswers={
+    delay:'Delays are usually a hand-off step between the merchant packing and the logistics pickup — check the stepper above to see exactly which stage this order is at.',
+    address:'You can update the delivery address any time before the seller marks the order "Picked up" — after that, changes go through the logistics partner instead.',
+    seller:'Tap the merchant name above to message them directly. For split orders, each seller only sees their own items, so you may need to message more than one.'
+  };
+
+  wireChatWidget('chat-fab-btn', 'chat-panel', checkoutChatAnswers);
+  wireChatWidget('chat-fab-btn-cart', 'chat-panel-cart', cartChatAnswers);
+  wireChatWidget('chat-fab-btn-track', 'chat-panel-track', trackChatAnswers);
+
+  /* ============ Want-List: demand stage, live auction, or matched offer ============ */
+  var wlIdCounter=0;
+  var wlActiveTab='auction';
+  var wantlistItems=[
+    {id:'w'+(wlIdCounter++), name:'Kids Rain Boots (size 28)', listType:'auction', target:250, stage:'matched', demand:41, threshold:40, matchedPrice:235, matchedMerchant:'Zone3 Traders', matchedTier:'Standard'},
+    {id:'w'+(wlIdCounter++), name:'Ceramic Dutch Oven 24cm', listType:'auction', target:1200, stage:'auction', demand:44, threshold:40, secondsLeft:480, bidderCount:3},
+    {id:'w'+(wlIdCounter++), name:'Air Fryer 4L', listType:'auction', target:1800, stage:'gathering', demand:21, threshold:40},
+    {id:'w'+(wlIdCounter++), name:'Wireless Earbuds', listType:'wishlist', target:999, originalPrice:1290, currentPrice:990, discountFound:true, seller:'Kitchen Plus Co.', tier:'Gold'},
+    {id:'w'+(wlIdCounter++), name:'Non-stick Pan 24cm', listType:'wishlist', target:499, originalPrice:599, currentPrice:599, discountFound:false, seller:'Kitchen Plus Co.', tier:'Gold'}
+  ];
+  var activeWlId=null;
+
+  function wlStageBadge(item){
+    if(item.listType==='wishlist') return item.discountFound ? '<span class="wl-status matched">🔔 Discount found</span>' : '<span class="wl-status watching">Watching for price drop</span>';
+    if(item.stage==='matched') return '<span class="wl-status matched">🎉 Match found</span>';
+    if(item.stage==='auction') return '<span class="wl-status auction">🔥 Auction live</span>';
+    return '<span class="wl-status watching">Gathering demand</span>';
+  }
+  function renderWlList(){
+    var wrap=document.getElementById('wl-list');
+    wrap.innerHTML='';
+    var filtered=wantlistItems.filter(function(i){ return i.listType===wlActiveTab; });
+    if(filtered.length===0){
+      wrap.innerHTML='<p class="table-summary" style="margin:4px 0 0;">'+(wlActiveTab==='wishlist' ? 'No wishlist items yet — add one below and we\'ll notify you when the price drops.' : 'No items in a demand auction yet — add one below.')+'</p>';
+      return;
+    }
+    filtered.forEach(function(item){
+      var div=document.createElement('div');
+      div.className='wl-item';
+      if(item.listType==='wishlist'){
+        var wsub = item.discountFound
+          ? ('฿'+item.currentPrice.toLocaleString()+' now · was ฿'+item.originalPrice.toLocaleString())
+          : ('Notify below ฿'+item.target.toLocaleString()+' · now ฿'+item.currentPrice.toLocaleString());
+        div.innerHTML =
+          '<div class="wl-top"><span class="wl-name">'+item.name+'</span>'+wlStageBadge(item)+'</div>'+
+          '<div class="wl-target">'+wsub+'</div>';
+      } else {
+        var sub = item.stage==='matched'
+          ? ('Won at ฿'+item.matchedPrice+' · ready to buy')
+          : item.stage==='auction'
+            ? (item.bidderCount+' merchant'+(item.bidderCount>1?'s':'')+' competing · '+formatWlTime(item.secondsLeft)+' left')
+            : ('Target ฿'+item.target.toLocaleString());
+        div.innerHTML =
+          '<div class="wl-top"><span class="wl-name">'+item.name+'</span>'+wlStageBadge(item)+'</div>'+
+          '<div class="wl-target">'+sub+'</div>'+
+          (item.stage!=='matched' ? '<div class="wl-mini-bar-bg"><div class="wl-mini-bar-fill" style="width:'+Math.min(100,Math.round(item.demand/item.threshold*100))+'%;"></div></div>' : '');
+      }
+      div.addEventListener('click', function(id){ return function(){ activeWlId=id; renderWlDetail(); document.getElementById('wl-list-view').style.display='none'; document.getElementById('wl-detail-view').style.display='block'; }; }(item.id));
+      wrap.appendChild(div);
+    });
+  }
+  function formatWlTime(s){ if(s<=0) return '00:00'; var m=Math.floor(s/60), sec=s%60; return (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec; }
+  function renderWlDetail(){
+    var item=wantlistItems.filter(function(x){ return x.id===activeWlId; })[0];
+    var el=document.getElementById('wl-detail-content');
+    if(!item){ el.innerHTML=''; return; }
+    var html='<div style="font-family:var(--font-display); font-weight:700; font-size:15px;">'+item.name+'</div>'+
+      '<div style="font-size:11px; color:var(--ink-soft); margin:2px 0 12px;">Your target: ฿'+item.target.toLocaleString()+'</div>';
+
+    if(item.listType==='wishlist'){
+      if(!item.discountFound){
+        var pct=Math.min(100,Math.round(item.target/item.currentPrice*100));
+        html += '<span class="wl-stage-badge gathering">Watching for price drop</span>'+
+          '<div class="wl-demand-card">'+
+          '<div class="wl-demand-text"><span>Current price ฿'+item.currentPrice.toLocaleString()+'</span><span>Target ฿'+item.target.toLocaleString()+'</span></div>'+
+          '<div class="wl-demand-bar-bg"><div class="wl-demand-bar-fill" style="width:'+pct+'%;"></div></div>'+
+          '<p class="wl-demand-note">No bidding involved — we just check the price regularly and notify you the moment it drops to your target or below.</p>'+
+          '</div>';
+      } else {
+        html += '<span class="wl-stage-badge matched">🔔 Discount found</span>'+
+          '<div class="wl-match-card">'+
+          '<div style="font-size:10.5px; color:#046C56; font-weight:600;">New price</div>'+
+          '<div class="wl-match-price">฿'+item.currentPrice.toLocaleString()+'</div>'+
+          '<div class="wl-match-meta">was ฿'+item.originalPrice.toLocaleString()+' · sold by <b>'+item.seller+'</b> · '+item.tier+' tier<br>฿'+(item.target-item.currentPrice>=0?(item.target-item.currentPrice):0)+' under your target</div>'+
+          '</div>'+
+          '<button class="checkout-btn" data-wlbuy="'+item.id+'">Buy Now</button>';
+      }
+      el.innerHTML=html;
+      el.querySelectorAll('[data-wlbuy]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          cartItems.push({id:'c'+(cartIdCounter++), name:item.name, price:item.currentPrice, auto:false, seller:item.seller, tier:item.tier});
+          renderCart();
+          document.getElementById('wl-detail-view').style.display='none';
+          document.getElementById('wl-list-view').style.display='block';
+          showPanel('cart');
+        });
+      });
+      return;
+    }
+
+    if(item.stage==='gathering'){
+      html += '<span class="wl-stage-badge gathering">Gathering demand</span>'+
+        '<div class="wl-demand-card">'+
+        '<div class="wl-demand-text"><span>'+item.demand+' of '+item.threshold+' shoppers</span><span>'+Math.round(item.demand/item.threshold*100)+'%</span></div>'+
+        '<div class="wl-demand-bar-bg"><div class="wl-demand-bar-fill" style="width:'+Math.min(100,Math.round(item.demand/item.threshold*100))+'%;"></div></div>'+
+        '<p class="wl-demand-note">Once '+item.threshold+' shoppers want this item, we trigger a live, time-boxed auction — merchants bid for the right to fulfill it. You do not need to do anything; this updates on its own.</p>'+
+        '</div>';
+    } else if(item.stage==='auction'){
+      html += '<span class="wl-stage-badge auction">Auction live</span>'+
+        '<div class="wl-auction-card">'+
+        '<div class="wl-auction-sub">Time remaining</div>'+
+        '<div class="wl-auction-timer" id="wl-detail-timer">'+formatWlTime(item.secondsLeft)+'</div>'+
+        '<div class="wl-auction-meta"><span>👥 '+item.bidderCount+' merchants bidding</span><span>🎯 Demand: '+item.demand+'</span></div>'+
+        '</div>'+
+        '<p class="wl-demand-note">Merchants are competing on price, fulfillment score, and rating for the right to sell you this item — you will see the winning offer the moment the round closes. Bid amounts are a platform mechanic; you only see the outcome.</p>';
+    } else {
+      html += '<span class="wl-stage-badge matched">Match found</span>'+
+        '<div class="wl-match-card">'+
+        '<div style="font-size:10.5px; color:#046C56; font-weight:600;">Winning offer</div>'+
+        '<div class="wl-match-price">฿'+item.matchedPrice.toLocaleString()+'</div>'+
+        '<div class="wl-match-meta">from <b>'+item.matchedMerchant+'</b> · '+item.matchedTier+' tier<br>'+(item.target-item.matchedPrice>=0?('฿'+(item.target-item.matchedPrice)+' under your target'):'above your original target, still the best offer available')+'</div>'+
+        '</div>'+
+        '<button class="checkout-btn" data-wlbuy="'+item.id+'">Buy Now</button>';
+    }
+    el.innerHTML=html;
+    el.querySelectorAll('[data-wlbuy]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        cartItems.push({id:'c'+(cartIdCounter++), name:item.name, price:item.matchedPrice, auto:false, seller:item.matchedMerchant, tier:item.matchedTier});
+        renderCart();
+        document.getElementById('wl-detail-view').style.display='none';
+        document.getElementById('wl-list-view').style.display='block';
+        showPanel('cart');
+      });
+    });
+  }
+  document.getElementById('wl-detail-back').addEventListener('click', function(){
+    document.getElementById('wl-detail-view').style.display='none';
+    document.getElementById('wl-list-view').style.display='block';
+  });
+  function updateWlSideNote(){
+    document.getElementById('wl-side-note').textContent = wlActiveTab==='wishlist'
+      ? "No auction, no bidding — we just watch the price and notify you the moment it drops to your target or below."
+      : "When enough shoppers want the same item, we trigger a live Demand-Triggered Auction so merchants compete to fulfill it. Tap any item to see exactly where it stands — see the same auction from the merchant's side in the Part 4 mockup.";
+  }
+  document.querySelectorAll('#wl-subtabs .chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      wlActiveTab=chip.dataset.wltab;
+      document.querySelectorAll('#wl-subtabs .chip').forEach(function(c){ c.classList.toggle('is-active', c===chip); });
+      document.getElementById('wl-name-input').placeholder = wlActiveTab==='wishlist' ? 'Item to watch for a price drop' : "Item you're waiting for";
+      updateWlSideNote();
+      renderWlList();
+    });
+  });
+  function addToWantList(name, price){
+    if(wlActiveTab==='wishlist'){
+      wantlistItems.unshift({id:'w'+(wlIdCounter++), name:name, listType:'wishlist', target:price, originalPrice:price, currentPrice:price, discountFound:false, seller:wlMerchantPool[Math.floor(Math.random()*wlMerchantPool.length)], tier:Math.random()<0.5?'Gold':'Standard'});
+    } else {
+      wantlistItems.unshift({id:'w'+(wlIdCounter++), name:name, listType:'auction', target:price, stage:'gathering', demand:1, threshold:randIntP5(30,50)});
+    }
+    renderWlList();
+  }
+  document.getElementById('wl-add-btn').addEventListener('click', function(){
+    var nameInput=document.getElementById('wl-name-input');
+    var priceInput=document.getElementById('wl-price-input');
+    var name=nameInput.value.trim();
+    if(!name) return;
+    var price=parseInt(priceInput.value,10) || 0;
+    addToWantList(name, price);
+    nameInput.value=''; priceInput.value='';
+  });
+  document.getElementById('price-drop-view-wl-btn').addEventListener('click', function(){
+    wlActiveTab='wishlist';
+    document.querySelectorAll('#wl-subtabs .chip').forEach(function(c){ c.classList.toggle('is-active', c.dataset.wltab==='wishlist'); });
+    updateWlSideNote();
+    renderWlList();
+    showPanel('wantlist');
+  });
+  renderWlList();
+
+  /* live simulation: demand accumulates, auctions count down and resolve */
+  var wlMerchantPool=['Zone3 Traders','Kitchen Plus Co.','MJ Home Supply','Lanna Textiles','Phuket Coastal Goods'];
+  setInterval(function(){
+    var changed=false;
+    wantlistItems.forEach(function(item){
+      if(item.listType==='wishlist'){
+        if(!item.discountFound && Math.random()<0.02){
+          item.currentPrice=Math.max(item.target-10, Math.round(item.currentPrice*(0.9+Math.random()*0.05)));
+          changed=true;
+          if(item.currentPrice<=item.target) item.discountFound=true;
+        }
+        return;
+      }
+      if(item.stage==='gathering'){
+        if(Math.random()<0.4){
+          item.demand+=1;
+          changed=true;
+          if(item.demand>=item.threshold){
+            item.stage='auction'; item.secondsLeft=480; item.bidderCount=randIntP5(2,5);
+          }
+        }
+      } else if(item.stage==='auction'){
+        item.secondsLeft-=1; changed=true;
+        if(item.secondsLeft<=0){
+          item.stage='matched';
+          item.matchedMerchant=wlMerchantPool[Math.floor(Math.random()*wlMerchantPool.length)];
+          item.matchedTier=Math.random()<0.5?'Gold':'Standard';
+          item.matchedPrice=Math.round(item.target*(0.82+Math.random()*0.14));
+        }
+      }
+    });
+    if(changed){
+      renderWlList();
+      if(activeWlId) renderWlDetail();
+    }
+  },1000);
+
+  /* ============ Conversion Funnel: segment-filterable ============ */
+  var segmentFunnels={
+    All:{visit:100000, cart:46000, checkout:31000, payment:24000},
+    New:{visit:52000, cart:15600, checkout:11000, payment:9360},
+    Returning:{visit:34000, cart:20000, checkout:13000, payment:8840},
+    Habitual:{visit:14000, cart:10400, checkout:7000, payment:5800}
+  };
+  var funnelStageNames=[['visit','Visit Product Page'],['cart','Add to Cart'],['checkout','Start Checkout'],['payment','Complete Payment']];
+  var activeFunnelSeg='All';
+  function renderFunnelChips(){
+    var el=document.getElementById('funnel-seg-chips');
+    var opts=['All','New','Returning','Habitual'];
+    el.innerHTML='';
+    opts.forEach(function(o){
+      var chip=document.createElement('span');
+      chip.className='chip'+(o===activeFunnelSeg?' is-active':'');
+      chip.textContent=o;
+      chip.addEventListener('click', function(){ activeFunnelSeg=o; renderFunnelChips(); renderFunnel(); });
+      el.appendChild(chip);
+    });
+  }
+  function renderFunnel(){
+    var d=segmentFunnels[activeFunnelSeg];
+    var wrap=document.getElementById('funnel-main');
+    wrap.innerHTML='';
+    var prevPct=100;
+    funnelStageNames.forEach(function(pair, idx){
+      var key=pair[0], label=pair[1];
+      var pct=Math.round(d[key]/d.visit*100);
+      var stage=document.createElement('div');
+      stage.className='funnel-stage';
+      var dropHtml='';
+      if(idx>0){
+        var prevKey=funnelStageNames[idx-1][0];
+        var prevPctVal=Math.round(d[prevKey]/d.visit*100);
+        var dropPts=prevPctVal-pct;
+        if(idx===2){ dropHtml='<div class="funnel-drop">↓ '+dropPts+' pts — the largest single drop in the funnel</div>'; }
+      }
+      stage.innerHTML =
+        '<div class="funnel-label"><span>'+label+'</span><b>'+d[key].toLocaleString()+' · '+pct+'%</b></div>'+
+        '<div class="funnel-bar-bg"><div class="funnel-bar-fill" style="width:'+pct+'%;">'+pct+'%</div></div>'+dropHtml;
+      wrap.appendChild(stage);
+    });
+    document.getElementById('funnel-callout').textContent =
+      activeFunnelSeg==='All'
+        ? 'Largest drop-off is Add to Cart → Checkout. Dynamic Shipping Discount and BNPL are aimed directly at this gap.'
+        : activeFunnelSeg+' shoppers: '+Math.round(d.payment/d.visit*100)+'% end-to-end conversion, biggest drop at the same Cart → Checkout step.';
+
+    var comp=document.getElementById('funnel-composition');
+    if(activeFunnelSeg!=='All'){
+      comp.innerHTML='';
+      return;
+    }
+    var drops={
+      New: segmentFunnels.New.cart-segmentFunnels.New.checkout,
+      Returning: segmentFunnels.Returning.cart-segmentFunnels.Returning.checkout,
+      Habitual: segmentFunnels.Habitual.cart-segmentFunnels.Habitual.checkout
+    };
+    var totalDrop=drops.New+drops.Returning+drops.Habitual;
+    var colors={New:'var(--brand)', Returning:'var(--live)', Habitual:'var(--gold)'};
+    var html='<p class="funnel-comp-title">Who makes up that Cart → Checkout drop-off?</p>';
+    ['New','Returning','Habitual'].forEach(function(seg){
+      var pct=Math.round(drops[seg]/totalDrop*100);
+      html += '<div class="funnel-comp-row"><span class="funnel-comp-label">'+seg+'</span>'+
+        '<div class="funnel-comp-bar-bg"><div class="funnel-comp-bar-fill" style="width:'+pct+'%; background:'+colors[seg]+';"></div></div>'+
+        '<span class="funnel-comp-pct">'+drops[seg].toLocaleString()+' ('+pct+'%)</span></div>';
+    });
+    html += '<p class="ma-side-note" style="max-width:none; padding-top:8px;">Returning shoppers contribute the most lost carts here — not because they convert worst individually (New does), but because they add to cart far more often. Volume, not just rate, decides where to focus.</p>';
+    comp.innerHTML=html;
+  }
+  renderFunnelChips();
+  renderFunnel();
+
+  /* ============ Console: Aggregated Want-List demand (scale-ready table) ============ */
+  var itemAdjectives=['Ceramic','Bamboo','Stackable','Insulated','Non-stick','Reusable','Portable','Foldable','Electric','Wireless','Woven','Compact'];
+  var itemNouns=['Storage Bin','Coffee Dripper','Cutting Board','Water Bottle','Desk Lamp','Yoga Mat','Blender','Rain Boots','Backpack','Air Fryer','Utensil Set','Dish Rack','Laundry Basket','Spice Rack','Pan Set'];
+  var categories=['Home & Kitchen','Apparel','Outdoor & Camping','Kids & Baby','Beauty & Personal Care','Electronics Accessories','Grocery & Pantry'];
+  var zones=['Zone 1 · Sukhumvit','Zone 2 · Silom','Zone 3 · Ladprao','Zone 4 · Thonglor','Zone 5 · Ari','Zone 6 · Bang Na'];
+  function genItemName(){ return pick(itemAdjectives)+' '+pick(itemNouns); }
+
+  var demandRows=[];
+  for(var d=0; d<74; d++){
+    var waiting = d<10 ? randInt(40,60) : randInt(3,39);
+    var status;
+    if(waiting>=40) status='Auction triggered';
+    else if(rand()<0.15) status='Fulfilled';
+    else status='Below threshold';
+    demandRows.push({id:'d'+d, item:genItemName(), category:pick(categories), zone:pick(zones), waiting:waiting, status:status});
+  }
+  demandRows.sort(function(a,b){ return b.waiting-a.waiting; });
+
+  var demandPage=1, demandPerPage=8, demandQuery='', demandFilter='All';
+  function visibleDemand(){
+    var q=demandQuery.toLowerCase();
+    return demandRows.filter(function(r){
+      var mq = !q || r.item.toLowerCase().indexOf(q)>-1 || r.category.toLowerCase().indexOf(q)>-1 || r.zone.toLowerCase().indexOf(q)>-1;
+      var mf = demandFilter==='All' || r.status===demandFilter;
+      return mq && mf;
+    });
+  }
+  function demandBadge(status){
+    if(status==='Auction triggered') return '<span class="badge badge-approved">Auction triggered</span>';
+    if(status==='Fulfilled') return '<span class="badge badge-verified">Fulfilled</span>';
+    return '<span class="badge badge-rejected">Below threshold</span>';
+  }
+  function renderDemandChips(){
+    var el=document.getElementById('demand-chips');
+    var opts=['All','Below threshold','Auction triggered','Fulfilled'];
+    el.innerHTML='';
+    opts.forEach(function(o){
+      var chip=document.createElement('span');
+      chip.className='chip'+(o===demandFilter?' is-active':'');
+      chip.textContent=o;
+      chip.addEventListener('click', function(){ demandFilter=o; demandPage=1; renderDemandChips(); renderDemand(); });
+      el.appendChild(chip);
+    });
+  }
+  function renderDemand(){
+    var all=visibleDemand();
+    var totalPages=Math.max(1, Math.ceil(all.length/demandPerPage));
+    if(demandPage>totalPages) demandPage=totalPages;
+    var start=(demandPage-1)*demandPerPage;
+    var pageItems=all.slice(start, start+demandPerPage);
+    var tbody=document.getElementById('demand-body');
+    tbody.innerHTML='';
+    pageItems.forEach(function(r){
+      var tr=document.createElement('tr');
+      if(r.status==='Auction triggered') tr.className='flag-row';
+      tr.innerHTML='<td>'+r.item+'</td><td>'+r.category+' · '+r.zone+'</td><td>'+r.waiting+'</td><td>'+demandBadge(r.status)+'</td>';
+      tbody.appendChild(tr);
+    });
+    var triggeredCount=demandRows.filter(function(r){return r.status==='Auction triggered';}).length;
+    document.getElementById('demand-summary').textContent =
+      demandRows.length+' items with active demand · '+triggeredCount+' have crossed the threshold and triggered a Merchant Suite auction';
+    document.getElementById('demand-pageinfo').textContent='Page '+demandPage+' of '+totalPages;
+    document.getElementById('demand-prev').disabled=demandPage<=1;
+    document.getElementById('demand-next').disabled=demandPage>=totalPages;
+  }
+  document.getElementById('demand-search').addEventListener('input', function(e){ demandQuery=e.target.value; demandPage=1; renderDemand(); });
+  document.getElementById('demand-prev').addEventListener('click', function(){ if(demandPage>1){ demandPage--; renderDemand(); } });
+  document.getElementById('demand-next').addEventListener('click', function(){ demandPage++; renderDemand(); });
+  renderDemandChips();
+  renderDemand();
+
+  /* ============ ROI: live payback calculator ============ */
+  function renderRoiCalc(){
+    var controlAOV=parseFloat(document.getElementById('roi-control-aov').value)||0;
+    var controlFreqQ=parseFloat(document.getElementById('roi-control-freq').value)||0;
+    var cost=parseFloat(document.getElementById('roi-cost').value)||0;
+    var aovUplift=parseFloat(document.getElementById('roi-aov-uplift').value)||0;
+    var freqUplift=parseFloat(document.getElementById('roi-freq-uplift').value)||0;
+    var takeRate=parseFloat(document.getElementById('roi-take-rate').value)||0;
+    var base=parseFloat(document.getElementById('roi-base').value)||0;
+
+    var controlFreqMonthly=controlFreqQ/3;
+    var baselineMonthly=controlAOV*controlFreqMonthly;
+    var combinedUpliftFactor=(1+aovUplift/100)*(1+freqUplift/100)-1;
+    var incrementalPerShopperMonthly=baselineMonthly*combinedUpliftFactor;
+    var totalIncrementalGmvMonthly=incrementalPerShopperMonthly*base;
+    var totalIncrementalRevenueMonthly=totalIncrementalGmvMonthly*(takeRate/100);
+    var paybackMonths = totalIncrementalRevenueMonthly>0 ? cost/totalIncrementalRevenueMonthly : Infinity;
+    var year1Return = (totalIncrementalRevenueMonthly*12)-cost;
+
+    document.getElementById('roi-baseline-rev').textContent='฿'+Math.round(baselineMonthly).toLocaleString()+' / shopper';
+    document.getElementById('roi-incremental-rev').textContent='฿'+Math.round(totalIncrementalGmvMonthly).toLocaleString()+' / mo, full base';
+    document.getElementById('roi-incremental-platform-rev').textContent='฿'+Math.round(totalIncrementalRevenueMonthly).toLocaleString()+' / mo';
+    var paybackText;
+    if(!isFinite(paybackMonths)) paybackText='—';
+    else if(paybackMonths<1){ var d=Math.max(1,Math.round(paybackMonths*30)); paybackText='≈ '+d+' day'+(d===1?'':'s'); }
+    else paybackText=paybackMonths.toFixed(1)+' months';
+    document.getElementById('roi-payback').textContent=paybackText;
+    document.getElementById('roi-year1').textContent = (year1Return>=0?'+':'−')+'฿'+Math.abs(Math.round(year1Return)).toLocaleString();
+    var noteEl=document.getElementById('roi-calc-note');
+    if(noteEl){
+      noteEl.textContent = paybackMonths<1
+        ? 'Payback looks fast because the uplift compounds across the full '+Math.round(base).toLocaleString()+'-shopper base at once. Real rollouts phase in gradually — lower the shopper base to model an earlier stage of rollout.'
+        : 'GMV converted to Amaze revenue at a '+takeRate+'% take rate before comparing against build cost — payback is measured on revenue, not GMV.';
+    }
+  }
+  ['roi-control-aov','roi-control-freq','roi-cost','roi-aov-uplift','roi-freq-uplift','roi-take-rate','roi-base'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', renderRoiCalc);
+  });
+  renderRoiCalc();
+
+  /* ============ New User Sign-Up wizard ============ */
+  var SU_TOTAL = 6;
+  var suCurrentStep = 1;
+  var suSelectedCats = [];
+  var suNotif = { pricedrop:true, orders:true, promo:false };
+  var suCategories = ['Home & Kitchen','Apparel','Outdoor & Camping','Kids & Baby','Beauty & Personal Care','Electronics Accessories','Grocery & Pantry'];
+
+  var suCatChipsEl = document.getElementById('su-cat-chips');
+  suCategories.forEach(function(c){
+    var chip=document.createElement('span');
+    chip.className='chip';
+    chip.textContent=c;
+    chip.addEventListener('click', function(){
+      chip.classList.toggle('is-active');
+      var idx=suSelectedCats.indexOf(c);
+      if(chip.classList.contains('is-active')){ if(idx===-1) suSelectedCats.push(c); }
+      else if(idx>-1){ suSelectedCats.splice(idx,1); }
+    });
+    suCatChipsEl.appendChild(chip);
+  });
+
+  ['pricedrop','orders','promo'].forEach(function(key){
+    var el = document.getElementById('su-notif-'+key);
+    el.addEventListener('click', function(){
+      suNotif[key] = !suNotif[key];
+      el.classList.toggle('is-on', suNotif[key]);
+    });
+  });
+
+  document.getElementById('su-referral').addEventListener('input', function(){
+    document.getElementById('su-referral-note').style.display = this.value.trim() ? 'block' : 'none';
+  });
+
+  var suStepEls = document.querySelectorAll('.su-step');
+  var suPsteps = document.querySelectorAll('#su-steps .pstep');
+  var suBackBtn = document.getElementById('su-back');
+  var suNextBtn = document.getElementById('su-next');
+
+  function suResetWizard(){
+    suCurrentStep = 1;
+    suSelectedCats = [];
+    suNotif = { pricedrop:true, orders:true, promo:false };
+    document.querySelectorAll('#su-cat-chips .chip').forEach(function(c){ c.classList.remove('is-active'); });
+    document.getElementById('su-notif-pricedrop').classList.add('is-on');
+    document.getElementById('su-notif-orders').classList.add('is-on');
+    document.getElementById('su-notif-promo').classList.remove('is-on');
+    document.getElementById('su-name').value='';
+    document.getElementById('su-phone').value='';
+    document.getElementById('su-password').value='';
+    document.getElementById('su-terms').checked=false;
+    document.getElementById('su-otp').value='';
+    document.getElementById('su-age').value='';
+    document.getElementById('su-gender').value='';
+    document.getElementById('su-location').value='';
+    document.getElementById('su-referral').value='';
+    document.getElementById('su-referral-note').style.display='none';
+    suShowStep(1);
+  }
+
+  function suShowStep(n){
+    suCurrentStep = n;
+    suStepEls.forEach(function(el){ el.classList.toggle('is-active', parseInt(el.dataset.step,10)===n); });
+    document.getElementById('su-step-title').textContent = n<=5 ? ('Step '+n+' of 5') : 'All set';
+    document.getElementById('su-steps').style.display = n===6 ? 'none' : 'flex';
+    suPsteps.forEach(function(el){
+      var idx=parseInt(el.dataset.pstep,10);
+      el.classList.toggle('done', idx<n);
+      el.classList.toggle('current', idx===n && n<=5);
+    });
+    suBackBtn.style.visibility = (n===1 || n===6) ? 'hidden' : 'visible';
+    suNextBtn.textContent = n===5 ? 'Finish' : (n===6 ? 'Start Shopping →' : 'Continue');
+  }
+
+  suBackBtn.addEventListener('click', function(){
+    if(suCurrentStep>1) suShowStep(suCurrentStep-1);
+  });
+
+  suNextBtn.addEventListener('click', function(){
+    if(suCurrentStep===1){
+      if(!document.getElementById('su-terms').checked){
+        alert('Please agree to the Terms of Service and Privacy Policy to continue.');
+        return;
+      }
+      document.getElementById('su-phone-echo').textContent = document.getElementById('su-phone').value || 'your phone';
+    }
+    if(suCurrentStep===2 && document.getElementById('su-otp').value.trim().length<4){
+      alert('Enter the 4-digit code (any 4 digits work in this demo).');
+      return;
+    }
+    if(suCurrentStep===5){
+      var parts=[];
+      if(suSelectedCats.length) parts.push(suSelectedCats.join(', '));
+      if(document.getElementById('su-age').value) parts.push(document.getElementById('su-age').value);
+      if(document.getElementById('su-location').value) parts.push(document.getElementById('su-location').value);
+      document.getElementById('su-summary').textContent = parts.length ? parts.join(' · ') : 'General trending — no preferences given';
+      var nameVal=document.getElementById('su-name').value.trim();
+      document.getElementById('su-name-echo').textContent = nameVal ? (', '+nameVal) : '';
+    }
+    if(suCurrentStep===6){
+      newUserPrefs = suSelectedCats.length ? { categories: suSelectedCats.slice(), age: document.getElementById('su-age').value, location: document.getElementById('su-location').value } : null;
+      showMsScreen('shop');
+      document.querySelectorAll('#seg-switch button').forEach(function(x){ x.classList.toggle('is-active', x.dataset.seg==='new'); });
+      renderHomeSeg('new');
+      suResetWizard();
+      return;
+    }
+    suShowStep(Math.min(suCurrentStep+1, 6));
+  });
+
+  suShowStep(1);
+
+})();
+</script>
+</body>
+</html>
