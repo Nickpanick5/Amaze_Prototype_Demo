@@ -32,7 +32,7 @@
         <h1 class="text-sm md:text-lg font-bold text-white">จำลองเปรียบเทียบ: ลดหย่อนภาษี vs ลงทุนเอง</h1>
     </div>
 
-    <!-- Main Workspace (Flex Col on Mobile, Flex Row on Desktop/Tablet Landscape) -->
+    <!-- Main Workspace -->
     <div class="flex-1 min-h-0 flex flex-col md:flex-row gap-2 overflow-hidden">
         
         <!-- Left Panel: Summaries & Chart -->
@@ -66,9 +66,7 @@
         </div>
 
         <!-- Right / Bottom Panel: Controls -->
-        <!-- On mobile: Bottom grid. On md/desktop: Right side column -->
         <div class="flex-none w-full md:w-64 lg:w-72 card-bg rounded-lg p-3 flex flex-col gap-3 justify-center md:justify-start overflow-hidden">
-            
             <div class="grid grid-cols-2 md:grid-cols-1 gap-x-4 gap-y-2 md:gap-y-4">
                 
                 <!-- Tax Bracket -->
@@ -83,7 +81,7 @@
                 <!-- Principal -->
                 <div class="flex flex-col">
                     <div class="flex justify-between items-center mb-1">
-                        <label class="text-[10px] md:text-xs text-gray-300">เงินต้น (บาท)</label>
+                        <label class="text-[10px] md:text-xs text-gray-300">เงินต้นก่อนหักภาษี (บาท)</label>
                         <input type="number" id="principalNum" value="200000" min="10000" max="1000000" step="10000" class="input-bg w-16 md:w-20 text-center text-[10px] md:text-xs py-0.5 rounded border border-[#32353e]">
                     </div>
                     <input type="range" id="principalSlider" min="10000" max="1000000" step="10000" value="200000">
@@ -124,7 +122,6 @@
                     </button>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -163,10 +160,10 @@
             const taxRefund = principal * taxBracket;
             const ownPrincipal = principal - taxRefund;
 
-            // Dynamic Text Update
+            // แก้ไขคำอธิบายให้ถูกต้องตามหลักการ ไม่มีการนับเบิ้ล
             document.getElementById('dynamicExplanation').innerHTML = `
-                <span class="text-[#38bdf8] font-semibold">กองทุน:</span> เงินต้น <b>${formatCurrency(principal)}</b> + เงินคืนภาษี <b>${formatCurrency(taxRefund)}</b><br>
-                <span class="text-[#34d399] font-semibold mt-0.5 inline-block">ลงทุนเอง:</span> จ่ายภาษี ${taxBracketPct}% ทิ้งไป เหลือเงินต้นลงทุน <b>${formatCurrency(ownPrincipal)}</b>
+                <span class="text-[#38bdf8] font-semibold">กองทุน:</span> เงินเต็มจำนวนไม่ถูกหักภาษี ได้เริ่มลงทุน <b>${formatCurrency(principal)}</b> เต็มๆ<br>
+                <span class="text-[#34d399] font-semibold mt-0.5 inline-block">ลงทุนเอง:</span> โดนหักภาษี ${taxBracketPct}% (ทิ้งไป ${formatCurrency(taxRefund)}) เหลือเงินต้นลงทุน <b>${formatCurrency(ownPrincipal)}</b>
             `;
 
             const labels = [];
@@ -176,7 +173,8 @@
 
             for (let i = 0; i <= years; i++) {
                 labels.push(i.toString());
-                const valTax = (principal * Math.pow(1 + rateTax, i)) + taxRefund;
+                // แก้ไขสมการ ไม่บวก taxRefund เข้าไปอีก
+                const valTax = principal * Math.pow(1 + rateTax, i);
                 dataTaxFund.push(valTax);
                 if (i === years) finalTax = valTax;
 
@@ -275,7 +273,8 @@
             const rateTax = parseFloat(document.getElementById('rateTaxNum').value) / 100;
 
             const taxRefund = principal * taxBracket;
-            const fvTax = (principal * Math.pow(1 + rateTax, years)) + taxRefund;
+            // แก้ไขสมการเป้าหมาย Break-Even
+            const fvTax = principal * Math.pow(1 + rateTax, years);
             const ownPrincipal = principal - taxRefund;
             
             if(ownPrincipal <= 0 || years <= 0) return;
@@ -296,7 +295,6 @@
         document.getElementById('calcBreakEvenBtn').addEventListener('click', calculateBreakEven);
         window.addEventListener('resize', () => { if (myChart) myChart.resize(); });
         
-        // Initial render
         setTimeout(updateSimulation, 100);
     </script>
 </body>
