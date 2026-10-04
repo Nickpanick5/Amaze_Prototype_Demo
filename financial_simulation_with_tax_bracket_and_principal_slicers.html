@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tax vs Self-Investment Simulator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg-base: #121316;
+    --surface-container: #1b1c20;
+    --surface-card: #222328;
+    --surface-bright: #2d2f36;
+    --stroke-default: #32353e;
+    --outline-variant: #424652;
+    --primary: #3b82f6;
+    --on-primary: #ffffff;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --chart-1: #38bdf8;
+    --chart-2: #4ade80;
+    --positive: #34d399;
+    --negative: #f87171;
+  }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .widget {
+    width: 100%;
+    max-width: 900px;
+    background: var(--surface-container);
+    border: 1px solid var(--stroke-default);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Summary Section */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1.2fr;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface-card);
+    border: 1px solid var(--stroke-default);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+  }
+  .summary-divider {
+    width: 1px;
+    height: 40px;
+    background: var(--stroke-default);
+  }
+  .summary-item {
+    text-align: center;
+  }
+  .summary-val {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+  }
+  .summary-val.positive { color: var(--chart-1); }
+  .summary-val.negative { color: var(--chart-2); }
+  .summary-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  @media (max-width: 680px) {
+    .summary-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .summary-divider {
+      width: 100%;
+      height: 1px;
+    }
+  }
+
+  /* Chart Area */
+  .chart-section {
+    width: 100%;
+    position: relative;
+    margin-bottom: 16px;
+  }
+  svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+  .axis-tick {
+    fill: var(--text-muted);
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .axis-label {
+    fill: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  /* Legend */
+  .legend-section {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    color: var(--text-secondary);
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  /* Slicers Card */
+  .slicer-card {
+    background: var(--surface-card);
+    border: 1px solid var(--stroke-default);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+  }
+  .slicer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .slicer-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .slicer-badge {
+    font-size: 13px;
+    padding: 3px 10px;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #60a5fa;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+
+  /* Tax Bracket Pills */
+  .bracket-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .bracket-pill {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--outline-variant);
+    background: var(--surface-bright);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .bracket-pill:hover {
+    border-color: var(--primary);
+    color: var(--text-primary);
+  }
+  .bracket-pill.active {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+  }
+
+  /* Sliders */
+  .slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .slider-row:last-child {
+    margin-bottom: 0;
+  }
+  .slider-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+  }
+  .slider-label {
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+  .slider-control {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--progress, 50%), var(--surface-bright) var(--progress, 50%), var(--surface-bright) 100%);
+    border-radius: 999px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid var(--primary);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    transition: transform 0.1s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+  .slider-val-box {
+    width: 105px;
+    background: var(--surface-bright);
+    border: 1px solid var(--outline-variant);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: right;
+    outline: none;
+  }
+  .slider-val-box:focus {
+    border-color: var(--primary);
+  }
+
+  .param-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 640px) {
+    .param-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    background: rgba(18, 19, 22, 0.95);
+    border: 1px solid var(--outline-variant);
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 13px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    z-index: 50;
+  }
+
+  .footer-note {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 18px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="widget">
+  <div class="mb-4">
+    <h2 class="text-xl font-bold text-white mb-1">จำลองเปรียบเทียบ: ซื้อกองทุนลดหย่อน vs ลงทุนเอง</h2>
+    <p class="text-xs text-gray-400">คำนวณแต้มต่อจากเงินคืนภาษี เทียบกับพลังดอกเบี้ยทบต้นเมื่อนำเงินไปลงทุนเอง</p>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid" id="summarySection"></div>
+
+  <!-- SVG Chart -->
+  <div class="chart-section">
+    <svg id="simChart" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="tooltip" id="chartTooltip"></div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend-section" id="legendSection"></div>
+
+  <!-- Slicers Section -->
+  <div class="slicer-card">
+    <div class="slicer-header">
+      <span class="slicer-title">1. เลือกขั้นบันไดภาษีที่ต้องการคิด</span>
+      <span class="slicer-badge" id="bracketNotice">ประหยัดภาษีได้ 10%</span>
+    </div>
+    <div class="bracket-pills" id="bracketPills"></div>
+
+    <div class="slicer-header" style="margin-top: 8px;">
+      <span class="slicer-title">2. เงินต้นในกลุ่มภาษีนี้</span>
+      <span class="slicer-badge" id="taxRefundNotice">เงินคืนภาษี: ฿20,000</span>
+    </div>
+    <div class="slider-control">
+      <input type="range" id="principalSlider" min="5000" max="500000" step="5000" value="200000">
+      <input type="text" id="principalInput" class="slider-val-box" value="฿200,000" inputmode="numeric">
+    </div>
+  </div>
+
+  <!-- Parameters Sliders -->
+  <div class="slicer-card">
+    <div class="text-sm font-semibold text-gray-200 mb-3">3. ปรับสมมติฐานผลตอบแทนและระยะเวลา</div>
+    <div class="param-grid">
+      <div class="slider-row">
+        <div class="slider-info">
+          <span class="slider-label">ผลตอบแทนกองทุนลดหย่อน (%/ปี)</span>
+        </div>
+        <div class="slider-control">
+          <input type="range" id="rateTaxSlider" min="0" max="15" step="0.5" value="7">
+          <input type="text" id="rateTaxInput" class="slider-val-box" value="7.0%" style="width: 75px;">
+        </div>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-info">
+          <span class="slider-label">ผลตอบแทนถ้าลงทุนเอง (%/ปี)</span>
+        </div>
+        <div class="slider-control">
+          <input type="range" id="rateOwnSlider" min="0" max="25" step="0.1" value="7.4">
+          <input type="text" id="rateOwnInput" class="slider-val-box" value="7.4%" style="width: 75px;">
+        </div>
+      </div>
+    </div>
+
+    <div class="slider-row" style="margin-top: 14px;">
+      <div class="slider-info">
+        <span class="slider-label">ระยะเวลาลงทุน (ปี) — <i>(5 ปี = Thai ESG, 30 ปี = RMF)</i></span>
+      </div>
+      <div class="slider-control">
+        <input type="range" id="yearsSlider" min="1" max="35" step="1" value="30">
+        <input type="text" id="yearsInput" class="slider-val-box" value="30 ปี" style="width: 75px;">
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note" id="footerNote"></div>
+</div>
+
+<script>
+  const taxBrackets = [5, 10, 15, 20, 25, 30, 35];
+  let currentTaxBracket = 10;
+  let currentPrincipal = 200000;
+  let rateTax = 7.0;
+  let rateOwn = 7.4;
+  let years = 30;
+
+  function fmtCurrency(n) {
+    const abs = Math.abs(n);
+    const sign = n < 0 ? '-' : '';
+    if (abs >= 1e6) return sign + '฿' + (abs / 1e6).toFixed(2) + 'M';
+    return sign + '฿' + Math.round(abs).toLocaleString('en-US');
+  }
+
+  function fmtAxisY(n) {
+    const abs = Math.abs(n);
+    if (abs >= 1e6) return '฿' + (n / 1e6).toFixed(1) + 'M';
+    if (abs >= 1e3) return '฿' + (n / 1e3).toFixed(0) + 'K';
+    return '฿' + n.toFixed(0);
+  }
+
+  function updateRangeStyle(slider) {
+    const min = parseFloat(slider.min) || 0;
+    const max = parseFloat(slider.max) || 100;
+    const val = parseFloat(slider.value) || 0;
+    const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+    slider.style.setProperty('--progress', pct + '%');
+  }
+
+  let computedData = { taxFund: [], ownInvest: [] };
+  let xYears = [];
+
+  function computeSimulation() {
+    xYears = [];
+    for (let i = 0; i <= years; i++) xYears.push(i);
+
+    const taxRefund = currentPrincipal * (currentTaxBracket / 100);
+    const ownPrincipal = Math.max(0, currentPrincipal - taxRefund);
+    const rT = rateTax / 100;
+    const rO = rateOwn / 100;
+
+    computedData.taxFund = xYears.map(t => currentPrincipal * Math.pow(1 + rT, t) + taxRefund);
+    computedData.ownInvest = xYears.map(t => ownPrincipal * Math.pow(1 + rO, t));
+  }
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  let stickyYMax = null;
+
+  function createSvg(tag, attrs, text) {
+    const el = document.createElementNS(SVG_NS, tag);
+    if (attrs) {
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
+    }
+    if (text !== undefined) el.textContent = String(text);
+    return el;
+  }
+
+  function niceMax(maxVal) {
+    if (maxVal <= 0) return 100;
+    const mag = Math.pow(10, Math.floor(Math.log10(maxVal)));
+    const res = maxVal / mag;
+    if (res <= 1.2) return 1.2 * mag;
+    if (res <= 1.5) return 1.5 * mag;
+    if (res <= 2) return 2 * mag;
+    if (res <= 3) return 3 * mag;
+    if (res <= 5) return 5 * mag;
+    if (res <= 7.5) return 7.5 * mag;
+    return 10 * mag;
+  }
+
+  function renderChart() {
+    computeSimulation();
+
+    const isMobile = window.innerWidth <= 600;
+    const SVG_W = isMobile ? 420 : 850;
+    const SVG_H = isMobile ? 320 : 420;
+    const PAD = isMobile
+      ? { top: 30, bottom: 40, left: 60, right: 15 }
+      : { top: 40, bottom: 50, left: 80, right: 25 };
+
+    const svg = document.getElementById('simChart');
+    svg.setAttribute('viewBox', `0 0 ${SVG_W} ${SVG_H}`);
+    svg.replaceChildren();
+
+    const gridLayer = createSvg('g', { id: 'gridLayer' });
+    const pathLayer = createSvg('g', { id: 'pathLayer' });
+    const hoverLayer = createSvg('g', { id: 'hoverLayer' });
+    svg.append(gridLayer, pathLayer, hoverLayer);
+
+    const maxVal = Math.max(
+      Math.max(...computedData.taxFund),
+      Math.max(...computedData.ownInvest)
+    );
+    const idealMax = niceMax(maxVal);
+    if (stickyYMax === null || idealMax > stickyYMax || idealMax < stickyYMax * 0.35) {
+      stickyYMax = idealMax;
+    }
+    const yMax = stickyYMax;
+
+    const plotW = SVG_W - PAD.left - PAD.right;
+    const plotH = SVG_H - PAD.top - PAD.bottom;
+
+    const xPos = i => PAD.left + (xYears.length > 1 ? (i / (xYears.length - 1)) * plotW : 0);
+    const yPos = v => PAD.top + plotH - (v / yMax) * plotH;
+
+    // Y Axis Ticks
+    const yTicks = 5;
+    for (let i = 0; i <= yTicks; i++) {
+      const val = (yMax / yTicks) * i;
+      const y = yPos(val);
+      if (i > 0) {
+        gridLayer.appendChild(createSvg('line', {
+          x1: PAD.left, y1: y, x2: SVG_W - PAD.right, y2: y,
+          stroke: 'var(--stroke-default)', 'stroke-dasharray': '3 3', 'stroke-width': 1
+        }));
+      }
+      gridLayer.appendChild(createSvg('text', {
+        x: PAD.left - 12, y: y + 4, 'text-anchor': 'end',
+        class: 'axis-tick'
+      }, fmtAxisY(val)));
+    }
+
+    // X Axis Ticks
+    const xInterval = Math.max(1, Math.ceil(xYears.length / 8));
+    xYears.forEach((t, i) => {
+      if (i % xInterval === 0 || i === xYears.length - 1) {
+        const x = xPos(i);
+        gridLayer.appendChild(createSvg('text', {
+          x, y: PAD.top + plotH + 20, 'text-anchor': 'middle',
+          class: 'axis-tick'
+        }, t));
+        gridLayer.appendChild(createSvg('line', {
+          x1: x, y1: PAD.top + plotH, x2: x, y2: PAD.top + plotH + 4,
+          stroke: 'var(--outline-variant)', 'stroke-width': 1
+        }));
+      }
+    });
+
+    // Axis Labels
+    gridLayer.appendChild(createSvg('text', {
+      x: PAD.left + plotW / 2, y: SVG_H - 10, 'text-anchor': 'middle',
+      class: 'axis-label'
+    }, 'ระยะเวลาลงทุน (ปี)'));
+
+    // Tax Fund Path
+    let pathTaxStr = `M ${xPos(0)},${yPos(computedData.taxFund[0])}`;
+    for (let i = 1; i < computedData.taxFund.length; i++) {
+      pathTaxStr += ` L ${xPos(i)},${yPos(computedData.taxFund[i])}`;
+    }
+    const pathTax = createSvg('path', {
+      d: pathTaxStr, fill: 'none', stroke: 'var(--chart-1)',
+      'stroke-width': 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round'
+    });
+    pathLayer.appendChild(pathTax);
+
+    // Own Invest Path
+    let pathOwnStr = `M ${xPos(0)},${yPos(computedData.ownInvest[0])}`;
+    for (let i = 1; i < computedData.ownInvest.length; i++) {
+      pathOwnStr += ` L ${xPos(i)},${yPos(computedData.ownInvest[i])}`;
+    }
+    const pathOwn = createSvg('path', {
+      d: pathOwnStr, fill: 'none', stroke: 'var(--chart-2)',
+      'stroke-width': 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round'
+    });
+    pathLayer.appendChild(pathOwn);
+
+    const hoverArea = createSvg('rect', {
+      x: PAD.left, y: PAD.top, width: plotW, height: plotH,
+      fill: 'transparent', style: 'cursor: crosshair'
+    });
+    const hoverLine = createSvg('line', {
+      x1: 0, y1: PAD.top, x2: 0, y2: PAD.top + plotH,
+      stroke: 'var(--text-secondary)', 'stroke-width': 1, 'stroke-dasharray': '4 4', opacity: 0
+    });
+    const dotTax = createSvg('circle', { r: 5, fill: 'var(--chart-1)', stroke: '#fff', 'stroke-width': 2, opacity: 0 });
+    const dotOwn = createSvg('circle', { r: 5, fill: 'var(--chart-2)', stroke: '#fff', 'stroke-width': 2, opacity: 0 });
+
+    hoverLayer.append(hoverArea, hoverLine, dotTax, dotOwn);
+
+    const tooltip = document.getElementById('chartTooltip');
+
+    hoverArea.onmousemove = (e) => {
+      const rect = svg.getBoundingClientRect();
+      const svgX = ((e.clientX - rect.left) / rect.width) * SVG_W;
+      const idx = Math.round(((svgX - PAD.left) / plotW) * (xYears.length - 1));
+      const ci = Math.max(0, Math.min(xYears.length - 1, idx));
+      const x = xPos(ci);
+
+      hoverLine.setAttribute('x1', x);
+      hoverLine.setAttribute('x2', x);
+      hoverLine.setAttribute('opacity', '1');
+
+      const vT = computedData.taxFund[ci];
+      const vO = computedData.ownInvest[ci];
+
+      dotTax.setAttribute('cx', x);
+      dotTax.setAttribute('cy', yPos(vT));
+      dotTax.setAttribute('opacity', '1');
+
+      dotOwn.setAttribute('cx', x);
+      dotOwn.setAttribute('cy', yPos(vO));
+      dotOwn.setAttribute('opacity', '1');
+
+      tooltip.innerHTML = `
+        <div style="font-weight:600; margin-bottom:4px; color:#9ca3af;">ปีที่ ${xYears[ci]}</div>
+        <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+          <span style="color:var(--chart-1);">●</span> กองทุนลดหย่อน: <b>${fmtCurrency(vT)}</b>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="color:var(--chart-2);">●</span> ลงทุนเอง: <b>${fmtCurrency(vO)}</b>
+        </div>
+      `;
+      tooltip.style.opacity = '1';
+
+      const ttWidth = tooltip.offsetWidth || 180;
+      let left = e.pageX + 15;
+      if (e.clientX + 15 + ttWidth > window.innerWidth - 10) left = e.pageX - ttWidth - 15;
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = (e.pageY + 15) + 'px';
+    };
+
+    hoverArea.onmouseleave = () => {
+      hoverLine.setAttribute('opacity', '0');
+      dotTax.setAttribute('opacity', '0');
+      dotOwn.setAttribute('opacity', '0');
+      tooltip.style.opacity = '0';
+    };
+  }
+
+  function renderSummary() {
+    const container = document.getElementById('summarySection');
+    container.replaceChildren();
+
+    const lastIdx = xYears.length - 1;
+    const finalTax = computedData.taxFund[lastIdx] || 0;
+    const finalOwn = computedData.ownInvest[lastIdx] || 0;
+    const diff = finalTax - finalOwn;
+
+    container.innerHTML = `
+      <div class="summary-item">
+        <div class="summary-val" style="color:var(--chart-1);">${fmtCurrency(finalTax)}</div>
+        <div class="summary-sub">มูลค่ากองทุนภาษีปีสุดท้าย</div>
+      </div>
+      <div class="summary-divider"></div>
+      <div class="summary-item">
+        <div class="summary-val" style="color:var(--chart-2);">${fmtCurrency(finalOwn)}</div>
+        <div class="summary-sub">มูลค่าลงทุนเองปีสุดท้าย</div>
+      </div>
+      <div class="summary-divider"></div>
+      <div class="summary-item">
+        <div class="summary-val ${diff >= 0 ? 'positive' : 'negative'}">
+          ${diff >= 0 ? '+' : '-'}${fmtCurrency(Math.abs(diff))}
+        </div>
+        <div class="summary-sub">${diff >= 0 ? 'กองทุนภาษีได้เปรียบสุทธิ' : 'ลงทุนเองได้เปรียบสุทธิ'}</div>
+      </div>
+    `;
+  }
+
+  function renderLegend() {
+    const container = document.getElementById('legendSection');
+    const taxRefund = currentPrincipal * (currentTaxBracket / 100);
+    const ownPrincipal = Math.max(0, currentPrincipal - taxRefund);
+
+    container.innerHTML = `
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--chart-1);"></div>
+        <span>กองทุนลดหย่อน + คืนภาษี (${fmtCurrency(taxRefund)})</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--chart-2);"></div>
+        <span>ลงทุนเอง (เงินต้นสุทธิหักภาษี ${fmtCurrency(ownPrincipal)})</span>
+      </div>
+    `;
+  }
+
+  function renderBracketPills() {
+    const container = document.getElementById('bracketPills');
+    container.replaceChildren();
+
+    taxBrackets.forEach(rate => {
+      const btn = document.createElement('button');
+      btn.className = `bracket-pill ${rate === currentTaxBracket ? 'active' : ''}`;
+      btn.textContent = `${rate}%`;
+      btn.onclick = () => {
+        currentTaxBracket = rate;
+        document.querySelectorAll('.bracket-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        recalculate();
+      };
+      container.appendChild(btn);
+    });
+  }
+
+  function setupControls() {
+    // Principal
+    const pSlider = document.getElementById('principalSlider');
+    const pInput = document.getElementById('principalInput');
+
+    const syncPrincipal = (val) => {
+      currentPrincipal = Math.max(1000, val);
+      pSlider.value = currentPrincipal;
+      pInput.value = fmtCurrency(currentPrincipal);
+      updateRangeStyle(pSlider);
+      recalculate();
+    };
+
+    pSlider.oninput = () => syncPrincipal(parseFloat(pSlider.value) || 0);
+    pInput.onfocus = () => { pInput.value = currentPrincipal; setTimeout(() => pInput.select(), 0); };
+    pInput.onblur = () => {
+      const parsed = parseFloat(pInput.value.replace(/[^0-9.]/g, '')) || 200000;
+      if (parsed > parseFloat(pSlider.max)) pSlider.max = parsed;
+      syncPrincipal(parsed);
+    };
+    pInput.onkeydown = (e) => { if (e.key === 'Enter') pInput.blur(); };
+
+    // Rate Tax
+    const rtSlider = document.getElementById('rateTaxSlider');
+    const rtInput = document.getElementById('rateTaxInput');
+    rtSlider.oninput = () => {
+      rateTax = parseFloat(rtSlider.value) || 0;
+      rtInput.value = rateTax.toFixed(1) + '%';
+      updateRangeStyle(rtSlider);
+      recalculate();
+    };
+    rtInput.onblur = () => {
+      rateTax = parseFloat(rtInput.value.replace(/[^0-9.]/g, '')) || 0;
+      rtSlider.value = rateTax;
+      rtInput.value = rateTax.toFixed(1) + '%';
+      updateRangeStyle(rtSlider);
+      recalculate();
+    };
+
+    // Rate Own
+    const roSlider = document.getElementById('rateOwnSlider');
+    const roInput = document.getElementById('rateOwnInput');
+    roSlider.oninput = () => {
+      rateOwn = parseFloat(roSlider.value) || 0;
+      roInput.value = rateOwn.toFixed(1) + '%';
+      updateRangeStyle(roSlider);
+      recalculate();
+    };
+    roInput.onblur = () => {
+      rateOwn = parseFloat(roInput.value.replace(/[^0-9.]/g, '')) || 0;
+      roSlider.value = rateOwn;
+      roInput.value = rateOwn.toFixed(1) + '%';
+      updateRangeStyle(roSlider);
+      recalculate();
+    };
+
+    // Years
+    const ySlider = document.getElementById('yearsSlider');
+    const yInput = document.getElementById('yearsInput');
+    ySlider.oninput = () => {
+      years = parseInt(ySlider.value) || 1;
+      yInput.value = years + ' ปี';
+      updateRangeStyle(ySlider);
+      recalculate();
+    };
+    yInput.onblur = () => {
+      years = parseInt(yInput.value.replace(/[^0-9.]/g, '')) || 1;
+      ySlider.value = years;
+      yInput.value = years + ' ปี';
+      updateRangeStyle(ySlider);
+      recalculate();
+    };
+
+    updateRangeStyle(pSlider);
+    updateRangeStyle(rtSlider);
+    updateRangeStyle(roSlider);
+    updateRangeStyle(ySlider);
+  }
+
+  function recalculate() {
+    const taxRefund = currentPrincipal * (currentTaxBracket / 100);
+    const ownPrincipal = Math.max(0, currentPrincipal - taxRefund);
+
+    document.getElementById('bracketNotice').textContent = `ประหยัดภาษีได้ ${currentTaxBracket}%`;
+    document.getElementById('taxRefundNotice').textContent = `เงินคืนภาษี: ${fmtCurrency(taxRefund)}`;
+    document.getElementById('footerNote').textContent =
+      `*ฐานภาษี ${currentTaxBracket}%: กองทุนลดหย่อนคิดจากเงินต้น ${fmtCurrency(currentPrincipal)} + ได้เงินคืนภาษี ${fmtCurrency(taxRefund)} / ลงทุนเองคิดจากเงินต้นสุทธิหลังหักภาษี ${fmtCurrency(ownPrincipal)}`;
+
+    renderChart();
+    renderSummary();
+    renderLegend();
+  }
+
+  window.onresize = () => renderChart();
+
+  window.onload = function() {
+    renderBracketPills();
+    setupControls();
+    recalculate();
+  };
+</script>
+</body>
+</html>
